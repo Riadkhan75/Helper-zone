@@ -96,43 +96,34 @@ Campus Help Zone এখন একটি পূর্ণাঙ্গ **Progressiv
 
 ---
 
-## ☁️ Vercel বনাম Google AI Studio
+## ☁️ Google AI Studio ও Vercel-এর মধ্যে ২-মুখী লাইভ সিঙ্ক (Bi-directional Sync)
 
-### কেন Vercel-এ আপডেট করলে Google AI Studio-তে পরিবর্তন হয় না?
-Google AI Studio এবং Vercel সম্পূর্ণ ভিন্ন দুটি ক্লাউড হোস্টিং সার্ভিস:
-- **Google AI Studio:** এটি Google Cloud Run কন্টেইনারে চলে।
-- **Vercel:** এটি Vercel-এর নিজস্ব গ্লোবাল সার্ভারলেস নেটওয়ার্কে চলে।
-উভয়ের সার্ভার মেমোরি ও ফাইল সিস্টেম আলাদা।
+এখন আপনার সব ফাইল ও কোড এমনভাবে প্রস্তুত করা হয়েছে যাতে **Google AI Studio অথবা Vercel—যেকোনো এক জায়গা থেকে কিছু পরিবর্তন করলেই অন্য জায়গায় তা সাথে সাথে পরিবর্তিত হয়ে যায়!**
 
-### কীভাবে উভয় জায়গায় এবং সব মোবাইলে একই ডেটা লাইভ দেখবেন?
-একটি **কেন্দ্রীয় Firebase Firestore** ডেটাবেস যুক্ত করে দিলেই সমাধান!
-Firebase হলো ক্লাউড ডেটাবেস। আপনি যখন একই Firebase API Keys:
-1. Google AI Studio-এর `.env` ফাইলে দিবেন, এবং
-2. Vercel-এর `Project Settings > Environment Variables`-এ দিবেন,
-তখন Vercel ও AI Studio এবং দুনিয়ার যেকোনো মোবাইল সরাসরি একই ক্লাউড ডেটাবেস শেয়ার করবে। কোনো এক জায়গায় পোস্ট করলে সব জায়গায় সাথে সাথে চলে আসবে!
+### এটি কীভাবে কাজ করে? (২টি শক্তিশালী স্তর):
 
----
+#### ১. স্বয়ংক্রিয় ক্লাউড সিঙ্ক ব্রিজ (Zero-Config Dual Bridge)
+- **CORS ওপেন:** `server.ts`-এ ক্রস-অরিজিন (CORS) অনুমতি যুক্ত করা হয়েছে।
+- **Vercel API ব্রিজ:** `/api/sync.ts` সার্ভারলেস ফাংশন তৈরি করা হয়েছে যা Vercel-এর ক্লায়েন্ট থেকে পাওয়া যেকোনো নতুন পোস্ট, বই, নোটিশ বা সেটিংস সরাসরি Google AI Studio-এর ক্লাউড সার্ভারে পৌঁছে দেয় এবং ক্যাশ করে রাখে।
+- **স্বয়ংক্রিয় পোলিং:** উভয় প্ল্যাটফর্ম প্রতি ৩ সেকেন্ডে এবং ব্রাউজার উইন্ডো ফোকাস হলেই লেটেস্ট পরিবর্তন গ্রহণ করে।
 
-## 🔥 Firebase ক্লাউড ডেটাবেস সেটআপ
-
-1. [Firebase Console](https://console.firebase.google.com/)-এ যান এবং `Add project` ক্লিক করে নতুন প্রজেক্ট তৈরি করুন।
-2. **Authentication চালু করুন:**
-   - **Build > Authentication**-এ যান।
-   - `Email/Password` প্রভাইডার Enable করুন।
-3. **Cloud Firestore ডাটাবেস তৈরি করুন:**
-   - **Build > Firestore Database**-এ গিয়ে `Create Database` চাপুন (Production mode)।
-4. **Web App তৈরি ও API Keys সংগ্রহ:**
-   - প্রজেক্ট সেটিংসে গিয়ে Web Icon (</>) ক্লিক করে অ্যাপ রেজিস্টার করুন।
-   - `firebaseConfig` এর মানগুলো কপি করুন।
+#### ২. রিয়েল-টাইম Firebase Firestore সিঙ্ক (মিলি-সেকেন্ডে পুশ নোটিফিকেশন)
+- যদি আপনি একই Firebase প্রজেক্টের কীগুলো Google AI Studio এবং Vercel উভয় জায়গায় দেন:
+- তখন পেজ রিফ্রেশ ছাড়াই চোখের পলকে (<১০০ মিলি-সেকেন্ড) এক ব্রাউজারের পরিবর্তন অন্য ব্রাউজারে লাইভ দৃশ্যমান হয়!
+- `firestore.rules`-এ `campus_sync` কালেকশনের পারমিশন উন্মুক্ত করা হয়েছে।
 
 ---
 
 ## 🔑 এনভায়রনমেন্ট ভেরিয়েবল (.env কনফিগারেশন)
 
-প্রজেক্টের মূল ফোল্ডারে `.env` ফাইলে কীগুলো বসান (এবং Vercel-এর Environment Variables-এও একই কীগুলো দিন):
+প্রজেক্টের মূল ফোল্ডারে `.env` ফাইলে এবং Vercel-এর **Project Settings > Environment Variables**-এ নিচের ভেরিয়েবলগুলো বসিয়ে দিন:
 
 ```env
-# Firebase Client Configuration
+# ১. ক্লাউড সিঙ্ক ব্রিজ (Google AI Studio <--> Vercel সংযুক্ত রাখার জন্য)
+VITE_SYNC_SERVER_URL="https://ais-pre-pqb7wjikhn6zb3kusrduly-622384418458.asia-east1.run.app"
+SYNC_SERVER_URL="https://ais-pre-pqb7wjikhn6zb3kusrduly-622384418458.asia-east1.run.app"
+
+# ২. Firebase কনফিগারেশন (উভয় জায়গায় একই দিন)
 VITE_FIREBASE_API_KEY="AIzaSyYourActualApiKeyHere"
 VITE_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
 VITE_FIREBASE_PROJECT_ID="your-project-id"
@@ -140,7 +131,7 @@ VITE_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
 VITE_FIREBASE_MESSAGING_SENDER_ID="123456789012"
 VITE_FIREBASE_APP_ID="1:123456789012:web:abcdef1234567890"
 
-# প্রধান এডমিন ইমেইল
+# ৩. প্রধান এডমিন ইমেইল
 VITE_ADMIN_EMAIL="nazrulpost75@gmail.com"
 ```
 

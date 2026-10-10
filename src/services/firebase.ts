@@ -10,7 +10,18 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  Firestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot
+} from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // Read config from Vite env
@@ -50,7 +61,20 @@ if (isFirebaseConfigured()) {
   console.info('Firebase environment variables not detected. Running Campus Help Zone in active local persistence mode.');
 }
 
-export { app, auth, db, storage };
+export { 
+  app, 
+  auth, 
+  db, 
+  storage,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot
+};
 export {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

@@ -23,7 +23,11 @@ import {
   INITIAL_LOGS,
   INITIAL_COMMENTS
 } from '../services/seedData';
-import { fetchSharedServerState, pushSharedServerUpdate } from '../services/apiService';
+import { 
+  fetchSharedServerState, 
+  pushSharedServerUpdate, 
+  subscribeToRealtimeSync 
+} from '../services/apiService';
 import { useAuth } from './AuthContext';
 
 export type ActiveTab = 'home' | 'study' | 'books' | 'lostfound' | 'community' | 'notifications' | 'profile' | 'admin';
@@ -168,10 +172,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const lastServerTimestampRef = useRef<string>('');
   const isInitialLoadDoneRef = useRef<boolean>(false);
 
-  // Background Live Sync: fetch latest changes from /api/sync every 3 seconds
+  // Background Live Sync: Real-time Firestore push notifications + HTTP periodic sync
   useEffect(() => {
     let isMounted = true;
 
+    // 1. Subscribe to Real-time cloud sync (instant sub-second updates across Vercel & AI Studio)
+    const unsubscribeRealtime = subscribeToRealtimeSync((type, payload) => {
+      if (!isMounted || !payload) return;
+
+      if (type === 'settings') {
+        setSettings(payload);
+        localStorage.setItem('chz_settings', JSON.stringify(payload));
+      } else if (type === 'notices' && Array.isArray(payload)) {
+        setNotices(payload);
+        localStorage.setItem('chz_notices', JSON.stringify(payload));
+      } else if (type === 'posts' && Array.isArray(payload)) {
+        setPosts(payload);
+        localStorage.setItem('chz_posts', JSON.stringify(payload));
+      } else if (type === 'comments' && typeof payload === 'object') {
+        setComments(payload);
+        localStorage.setItem('chz_comments', JSON.stringify(payload));
+      } else if (type === 'studyMaterials' && Array.isArray(payload)) {
+        setStudyMaterials(payload);
+        localStorage.setItem('chz_study', JSON.stringify(payload));
+      } else if (type === 'books' && Array.isArray(payload)) {
+        setBooks(payload);
+        localStorage.setItem('chz_books', JSON.stringify(payload));
+      } else if (type === 'lostFoundItems' && Array.isArray(payload)) {
+        setLostFoundItems(payload);
+        localStorage.setItem('chz_lostfound', JSON.stringify(payload));
+      } else if (type === 'notifications' && Array.isArray(payload)) {
+        setNotifications(payload);
+        localStorage.setItem('chz_notifs', JSON.stringify(payload));
+      } else if (type === 'reports' && Array.isArray(payload)) {
+        setReports(payload);
+        localStorage.setItem('chz_reports', JSON.stringify(payload));
+      } else if (type === 'activityLogs' && Array.isArray(payload)) {
+        setActivityLogs(payload);
+        localStorage.setItem('chz_logs', JSON.stringify(payload));
+      }
+    });
+
+    // 2. HTTP Sync Bridge: fetches consolidated state periodically
     const syncFromServer = async () => {
       const serverState = await fetchSharedServerState();
       if (!serverState || !isMounted) return;
@@ -232,6 +274,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => {
       isMounted = false;
+      unsubscribeRealtime();
       clearInterval(interval);
       window.removeEventListener('focus', syncFromServer);
     };

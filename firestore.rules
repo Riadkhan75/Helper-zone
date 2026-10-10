@@ -18,6 +18,11 @@ service cloud.firestore {
       );
     }
 
+    // Shared Campus Sync Collection (bi-directional sync between Google AI Studio and Vercel)
+    match /campus_sync/{syncDoc} {
+      allow read, write: if true;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

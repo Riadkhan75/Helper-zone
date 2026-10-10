@@ -10,7 +10,11 @@ import {
   sendPasswordResetEmail,
   onAuthStateChanged
 } from '../services/firebase';
-import { fetchSharedServerState, pushSharedServerUpdate } from '../services/apiService';
+import { 
+  fetchSharedServerState, 
+  pushSharedServerUpdate, 
+  subscribeToRealtimeSync 
+} from '../services/apiService';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
@@ -74,9 +78,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  // Load and periodically sync users from server (cross-device sync)
+  // Load and periodically sync users from server (cross-device & cross-deployment sync)
   useEffect(() => {
     let isMounted = true;
+
+    // 1. Instant realtime sync from Firestore
+    const unsubscribeRealtime = subscribeToRealtimeSync((type, payload) => {
+      if (!isMounted || type !== 'users' || !Array.isArray(payload) || payload.length === 0) return;
+
+      setUsers(payload);
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(payload));
+
+      setCurrentUser(curr => {
+        if (!curr) return null;
+        const matched = payload.find((u: UserProfile) => u.uid === curr.uid || u.email.toLowerCase() === curr.email.toLowerCase());
+        return matched || curr;
+      });
+    });
+
+    // 2. HTTP sync polling fallback
     const syncUsersFromServer = async () => {
       const serverState = await fetchSharedServerState();
       if (!isMounted || !serverState) return;
@@ -98,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const interval = setInterval(syncUsersFromServer, 5000);
     return () => {
       isMounted = false;
+      unsubscribeRealtime();
       clearInterval(interval);
     };
   }, []);
