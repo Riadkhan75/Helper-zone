@@ -1,0 +1,6 @@
+{
+  "name": "Campus Help Zone",
+  "description": "আধুনিক ও নিরাপদ কলেজ স্টুডেন্ট কমিউনিটি প্ল্যাটফর্ম — স্টাডি রিসোর্স, বই বিনিময়, লস্ট অ্যান্ড ফাউন্ড এবং পারস্পরিক সাহায্যের নির্ভরযোগ্য মাধ্যম।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

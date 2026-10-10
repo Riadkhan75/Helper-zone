@@ -1,0 +1,58 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.email == "nazrulpost75@gmail.com"
+      );
+    }
+
+    function isPermittedDocument() {
+      return request.resource.size < 15 * 1024 * 1024 && // 15MB limit
+        (request.resource.contentType.matches('application/pdf') ||
+         request.resource.contentType.matches('application/msword') ||
+         request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+         request.resource.contentType.matches('image/.*'));
+    }
+
+    function isPermittedImage() {
+      return request.resource.size < 5 * 1024 * 1024 && // 5MB limit
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Study materials documents
+    match /study_materials/{userId}/{fileName} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isPermittedDocument();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Post & Lost/Found pictures
+    match /uploads/{userId}/{fileName} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isPermittedImage();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Avatars
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isPermittedImage();
+    }
+  }
+}
