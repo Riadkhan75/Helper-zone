@@ -53,7 +53,8 @@ export const StudyView: React.FC<StudyViewProps> = ({ onOpenUpload, onOpenAuth }
     const matchesSearch = search === '' ||
       item.title.toLowerCase().includes(search.toLowerCase()) ||
       item.subject.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase());
+      item.description.toLowerCase().includes(search.toLowerCase()) ||
+      item.academicYear.toLowerCase().includes(search.toLowerCase());
 
     const matchesDept = selectedDept === 'all' || item.department.toLowerCase().includes(selectedDept.toLowerCase());
     const matchesCat = selectedCategory === 'all' || item.category === selectedCategory;

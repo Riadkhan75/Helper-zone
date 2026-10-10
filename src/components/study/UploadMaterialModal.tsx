@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { X, Upload, FileText, CheckCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { StudyMaterial } from '../../types';
+import { AcademicYearSelector } from '../common/AcademicYearSelector';
 
 interface UploadMaterialModalProps {
   isOpen: boolean;
@@ -154,19 +155,10 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({ isOpen
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">শিক্ষাবর্ষ / শ্রেণি</label>
-              <select
+              <AcademicYearSelector
                 value={academicYear}
-                onChange={(e) => setAcademicYear(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-              >
-                <option value="এইচএসসি / ১ম বর্ষ">এইচএসসি / ১ম বর্ষ</option>
-                <option value="এইচএসসি / ২য় বর্ষ">এইচএসসি / ২য় বর্ষ</option>
-                <option value="১ম বর্ষ (অনার্স)">১ম বর্ষ (অনার্স)</option>
-                <option value="২য় বর্ষ (অনার্স)">২য় বর্ষ (অনার্স)</option>
-                <option value="৩য় বর্ষ (অনার্স)">৩য় বর্ষ (অনার্স)</option>
-                <option value="৪র্থ বর্ষ (অনার্স)">৪র্থ বর্ষ (অনার্স)</option>
-              </select>
+                onChange={setAcademicYear}
+              />
             </div>
           </div>
 

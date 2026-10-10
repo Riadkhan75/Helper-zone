@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { X, Lock, Mail, User, School, BookOpen, GraduationCap, Phone, ShieldCheck } from 'lucide-react';
-import { INITIAL_USERS } from '../../services/seedData';
+import { AcademicYearSelector } from '../common/AcademicYearSelector';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,7 +15,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   defaultMode = 'login',
 }) => {
-  const { login, register, resetPassword, switchUserRoleForDemo, isFirebaseMode } = useAuth();
+  const { login, register, resetPassword, isFirebaseMode } = useAuth();
   const { addToast } = useApp();
 
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(defaultMode);
@@ -79,12 +79,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleQuickDemoSelect = (uid: string) => {
-    switchUserRoleForDemo(uid);
-    addToast('ডেমো অ্যাকাউন্ট পরিবর্তন করা হয়েছে।', 'info');
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
@@ -114,35 +108,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {errorMsg}
             </div>
           )}
-
-          {/* Quick Demo Switcher Strip */}
-          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-                দ্রুত টেস্ট অ্যাকাউন্ট (এক ক্লিকে সুইচ)
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {isFirebaseMode ? 'Firebase সক্রিয়' : 'সিমুলেশন মোড'}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-              {INITIAL_USERS.map((u) => (
-                <button
-                  key={u.uid}
-                  type="button"
-                  onClick={() => handleQuickDemoSelect(u.uid)}
-                  className="flex items-center gap-2 p-2 text-left bg-white hover:bg-indigo-50 border border-slate-200 rounded-lg text-xs transition-colors cursor-pointer"
-                >
-                  <img src={u.photoURL} alt={u.displayName} className="w-6 h-6 rounded-full object-cover shrink-0" />
-                  <div className="truncate">
-                    <p className="font-semibold text-slate-800 truncate">{u.displayName}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{u.role === 'admin' ? '🛡️ প্রধান এডমিন' : `🎓 ${u.department}`}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {mode === 'register' && (
@@ -195,23 +160,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">শিক্ষাবর্ষ / শ্রেণি</label>
-                    <div className="relative">
-                      <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                      <select
-                        value={academicYear}
-                        onChange={(e) => setAcademicYear(e.target.value)}
-                        className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                      >
-                        <option value="এইচএসসি ১ম বর্ষ">এইচএসসি ১ম বর্ষ</option>
-                        <option value="এইচএসসি ২য় বর্ষ">এইচএসসি ২য় বর্ষ</option>
-                        <option value="অনার্স ১ম বর্ষ">অনার্স ১ম বর্ষ</option>
-                        <option value="অনার্স ২য় বর্ষ">অনার্স ২য় বর্ষ</option>
-                        <option value="অনার্স ৩য় বর্ষ">অনার্স ৩য় বর্ষ</option>
-                        <option value="অনার্স ৪র্থ বর্ষ">অনার্স ৪র্থ বর্ষ</option>
-                        <option value="মাস্টার্স">মাস্টার্স</option>
-                      </select>
-                    </div>
+                    <AcademicYearSelector
+                      value={academicYear}
+                      onChange={setAcademicYear}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">ফোন নম্বর (ঐচ্ছিক)</label>

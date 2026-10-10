@@ -25,9 +25,16 @@ import {
   UserX,
   UserCheck,
   AlertOctagon,
-  ArrowLeft
+  ArrowLeft,
+  MapPin,
+  Phone,
+  Calendar,
+  Book,
+  Tag,
+  Flag,
+  Filter
 } from 'lucide-react';
-import { StudyMaterial, CollegeNotice, UserProfile, ReportItem } from '../../types';
+import { StudyMaterial, CollegeNotice, UserProfile, ReportItem, BookListing, LostFoundItem } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
 
 type AdminTab = 'overview' | 'approvals' | 'users' | 'posts' | 'study' | 'books' | 'lostfound' | 'reports' | 'notices' | 'settings' | 'logs';
@@ -48,8 +55,10 @@ export const AdminPanel: React.FC = () => {
     rejectStudyMaterial, 
     deleteStudyMaterial, 
     books, 
+    updateBookStatus,
     deleteBookListing, 
     lostFoundItems, 
+    updateLostFoundStatus,
     deleteLostFoundItem, 
     reports, 
     resolveReport, 
@@ -65,6 +74,13 @@ export const AdminPanel: React.FC = () => {
   } = useApp();
 
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('overview');
+
+  // Filters for content tabs
+  const [bookSearch, setBookSearch] = useState('');
+  const [bookStatusFilter, setBookStatusFilter] = useState<string>('all');
+  const [lostFoundSearch, setLostFoundSearch] = useState('');
+  const [lostFoundStatusFilter, setLostFoundStatusFilter] = useState<string>('all');
+  const [reportStatusFilter, setReportStatusFilter] = useState<'all' | 'pending' | 'resolved' | 'dismissed'>('all');
 
   // Search queries
   const [userSearch, setUserSearch] = useState('');
@@ -669,7 +685,475 @@ export const AdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 6: NOTICES & ANNOUNCEMENTS MANAGER */}
+      {/* TAB: BOOK LISTINGS MANAGER */}
+      {activeAdminTab === 'books' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-purple-600" />
+                বইয়ের লিস্টিং ব্যবস্থাপনা
+              </h2>
+              <p className="text-xs text-slate-500">ক্যাম্পাস বুক এক্সচেঞ্জের বইসমূহ নিয়ন্ত্রণ, স্ট্যাটাস পরিবর্তন ও ভুয়া লিস্টিং মুছে ফেলুন</p>
+            </div>
+            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">
+              মোট {books.length}টি বই
+            </span>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="বইয়ের নাম, লেখক বা বিক্রেতার নাম দিয়ে খুঁজুন..."
+                value={bookSearch}
+                onChange={(e) => setBookSearch(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              {[
+                { id: 'all', label: 'সকল' },
+                { id: 'available', label: 'উপলব্ধ (Available)' },
+                { id: 'reserved', label: 'সংরক্ষিত (Reserved)' },
+                { id: 'sold', label: 'বিক্রি শেষ (Sold)' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setBookStatusFilter(f.id)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
+                    bookStatusFilter === f.id
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Books List */}
+          {books
+            .filter((b) => {
+              const matchesSearch =
+                b.title.toLowerCase().includes(bookSearch.toLowerCase()) ||
+                b.author.toLowerCase().includes(bookSearch.toLowerCase()) ||
+                b.sellerName.toLowerCase().includes(bookSearch.toLowerCase());
+              const matchesStatus =
+                bookStatusFilter === 'all' || b.status === bookStatusFilter;
+              return matchesSearch && matchesStatus;
+            })
+            .length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl">
+              <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              কোনো বইয়ের লিস্টিং পাওয়া যায়নি।
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {books
+                .filter((b) => {
+                  const matchesSearch =
+                    b.title.toLowerCase().includes(bookSearch.toLowerCase()) ||
+                    b.author.toLowerCase().includes(bookSearch.toLowerCase()) ||
+                    b.sellerName.toLowerCase().includes(bookSearch.toLowerCase());
+                  const matchesStatus =
+                    bookStatusFilter === 'all' || b.status === bookStatusFilter;
+                  return matchesSearch && matchesStatus;
+                })
+                .map((book) => (
+                  <div
+                    key={book.id}
+                    className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {book.imageUrl ? (
+                        <img
+                          src={book.imageUrl}
+                          alt={book.title}
+                          className="w-14 h-18 rounded-xl object-cover border border-slate-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-14 h-18 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                          <Book className="w-6 h-6" />
+                        </div>
+                      )}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-slate-900 text-sm">{book.title}</h3>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              book.listingType === 'sell'
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : book.listingType === 'free'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-amber-50 text-amber-700'
+                            }`}
+                          >
+                            {book.listingType === 'sell'
+                              ? `৳ ${book.price}`
+                              : book.listingType === 'free'
+                              ? 'ফ্রি'
+                              : 'বিনিময়'}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              book.status === 'available'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : book.status === 'reserved'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {book.status === 'available'
+                              ? 'উপলব্ধ'
+                              : book.status === 'reserved'
+                              ? 'সংরক্ষিত'
+                              : 'বিক্রি শেষ'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          লেখক: <strong className="text-slate-700">{book.author}</strong> · সংস্করণ: {book.edition || 'উচ্চারিত নয়'} · অবস্থা: {book.condition}
+                        </p>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                          <span>বিক্রেতা: <strong className="text-slate-700">{book.sellerName}</strong></span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            {book.sellerPhone || 'ফোন নম্বর দেওয়া হয়নি'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <select
+                        value={book.status}
+                        onChange={(e) => updateBookStatus(book.id, e.target.value as any)}
+                        className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+                      >
+                        <option value="available">উপলব্ধ (Available)</option>
+                        <option value="reserved">সংরক্ষিত (Reserved)</option>
+                        <option value="sold">বিক্রি শেষ (Sold)</option>
+                      </select>
+
+                      <button
+                        onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: 'বইয়ের লিস্টিং ডিলিট করবেন?',
+                            description: `"${book.title}" বইটির লিস্টিং স্থায়ীভাবে মুছে যাবে।`,
+                            onConfirm: () => deleteBookListing(book.id),
+                          });
+                        }}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl cursor-pointer transition-colors"
+                        title="লিস্টিং মুছুন"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: LOST & FOUND MANAGER */}
+      {activeAdminTab === 'lostfound' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <SearchCode className="w-5 h-5 text-purple-600" />
+                লস্ট অ্যান্ড ফাউন্ড ব্যবস্থাপনা
+              </h2>
+              <p className="text-xs text-slate-500">ক্যাম্পাসে হারানো ও প্রাপ্ত বিজ্ঞপ্তিসমূহ পর্যবেক্ষণ, সমাধান এবং প্রাইভেসি নিয়ন্ত্রণ</p>
+            </div>
+            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">
+              মোট {lostFoundItems.length}টি বিজ্ঞপ্তি
+            </span>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="আইটেমের নাম, বিবরণ বা স্থান দিয়ে খুঁজুন..."
+                value={lostFoundSearch}
+                onChange={(e) => setLostFoundSearch(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              {[
+                { id: 'all', label: 'সকল' },
+                { id: 'lost', label: 'হারানো (Lost)' },
+                { id: 'found', label: 'পাওয়া গেছে (Found)' },
+                { id: 'returned', label: 'ফেরত দেওয়া হয়েছে (Returned)' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setLostFoundStatusFilter(f.id)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-xl whitespace-nowrap transition-colors cursor-pointer ${
+                    lostFoundStatusFilter === f.id
+                      ? 'bg-purple-600 text-white font-bold'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Items List */}
+          {lostFoundItems
+            .filter((item) => {
+              const matchesSearch =
+                item.title.toLowerCase().includes(lostFoundSearch.toLowerCase()) ||
+                item.location.toLowerCase().includes(lostFoundSearch.toLowerCase()) ||
+                item.reporterName.toLowerCase().includes(lostFoundSearch.toLowerCase());
+              const matchesStatus =
+                lostFoundStatusFilter === 'all' || item.status === lostFoundStatusFilter || (lostFoundStatusFilter === 'lost' && item.type === 'lost') || (lostFoundStatusFilter === 'found' && item.type === 'found');
+              return matchesSearch && matchesStatus;
+            })
+            .length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl">
+              <SearchCode className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              কোনো হারানো/প্রাপ্তি বিজ্ঞপ্তি পাওয়া যায়নি।
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {lostFoundItems
+                .filter((item) => {
+                  const matchesSearch =
+                    item.title.toLowerCase().includes(lostFoundSearch.toLowerCase()) ||
+                    item.location.toLowerCase().includes(lostFoundSearch.toLowerCase()) ||
+                    item.reporterName.toLowerCase().includes(lostFoundSearch.toLowerCase());
+                  const matchesStatus =
+                    lostFoundStatusFilter === 'all' || item.status === lostFoundStatusFilter || (lostFoundStatusFilter === 'lost' && item.type === 'lost') || (lostFoundStatusFilter === 'found' && item.type === 'found');
+                  return matchesSearch && matchesStatus;
+                })
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
+                          <SearchCode className="w-6 h-6" />
+                        </div>
+                      )}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              item.type === 'lost'
+                                ? 'bg-rose-50 text-rose-700'
+                                : 'bg-emerald-50 text-emerald-700'
+                            }`}
+                          >
+                            {item.type === 'lost' ? 'হারিয়ে গেছে' : 'পাওয়া গেছে'}
+                          </span>
+                          <h3 className="font-bold text-slate-900 text-sm">{item.title}</h3>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              item.status === 'returned'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-50 text-amber-700'
+                            }`}
+                          >
+                            {item.status === 'returned' ? 'ফেরত দেওয়া হয়েছে' : 'চলমান'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600">{item.description}</p>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-slate-400" />
+                            {item.location}
+                          </span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            {item.date}
+                          </span>
+                          <span>·</span>
+                          <span>পোস্টদাতা: <strong className="text-slate-700">{item.reporterName}</strong> ({item.reporterPhone || 'ফোন নম্বর নেই'})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      {item.status !== 'returned' && (
+                        <button
+                          onClick={() => {
+                            updateLostFoundStatus(item.id, 'returned');
+                            addToast('আইটেমটি ফেরত দেওয়া হয়েছে চিহ্নিত হয়েছে।', 'success');
+                          }}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>ফেরত মার্ক করুন</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: 'বিজ্ঞপ্তি ডিলিট করবেন?',
+                            description: `"${item.title}" বিজ্ঞপ্তিটি স্থায়ীভাবে মুছে যাবে।`,
+                            onConfirm: () => deleteLostFoundItem(item.id),
+                          });
+                        }}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl cursor-pointer transition-colors"
+                        title="বিজ্ঞপ্তি মুছুন"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: REPORTS QUEUE MANAGER */}
+      {activeAdminTab === 'reports' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Flag className="w-5 h-5 text-rose-600" />
+                রিপোর্ট ও অভিযোগ সমাধান কিউ
+              </h2>
+              <p className="text-xs text-slate-500">শিক্ষার্থীদের দাখিলকৃত রিপোর্ট, ভুয়া লিস্টিং ও ক্ষতিকর কনটেন্ট পর্যালোচনা করুন</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full">
+                {pendingReports.length}টি অপেক্ষমাণ
+              </span>
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                মোট {reports.length}টি
+              </span>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex items-center gap-1.5">
+            {[
+              { id: 'all', label: 'সকল রিপোর্ট' },
+              { id: 'pending', label: `অপেক্ষমাণ (${pendingReports.length})` },
+              { id: 'resolved', label: 'নিষ্পত্তিকৃত (Resolved)' },
+              { id: 'dismissed', label: 'খারিজকৃত (Dismissed)' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setReportStatusFilter(f.id as any)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
+                  reportStatusFilter === f.id
+                    ? 'bg-rose-600 text-white font-bold'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Reports List */}
+          {reports.filter(r => reportStatusFilter === 'all' || r.status === reportStatusFilter).length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl space-y-2">
+              <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
+              <p className="font-semibold text-slate-700">কোনো অভিযোগ জমা নেই!</p>
+              <p className="text-[11px] text-slate-500">ক্যাম্পাস কমিউনিটি নিরাপদ, পরিচ্ছন্ন এবং সুরক্ষিত রয়েছে।</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reports
+                .filter(r => reportStatusFilter === 'all' || r.status === reportStatusFilter)
+                .map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            rep.status === 'pending'
+                              ? 'bg-amber-100 text-amber-800'
+                              : rep.status === 'resolved'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          {rep.status === 'pending'
+                            ? 'অপেক্ষমাণ'
+                            : rep.status === 'resolved'
+                            ? 'নিষ্পত্তিকৃত'
+                            : 'খারিজকৃত'}
+                        </span>
+                        <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
+                          কারণ: {rep.reason}
+                        </span>
+                        <h3 className="font-bold text-slate-900 text-sm">
+                          টার্গেট: {rep.targetTitle}
+                        </h3>
+                      </div>
+
+                      <p className="text-xs text-slate-700 bg-white p-2.5 rounded-xl border border-slate-100">
+                        অভিযোগের বিবরণ: <strong>{rep.details}</strong>
+                      </p>
+
+                      <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                        <span>ক্যাটাগরি: <strong className="text-slate-600">{rep.targetType}</strong></span>
+                        <span>·</span>
+                        <span>অভিযোগকারী আইডি: <code className="text-slate-600 font-mono">{rep.reporterId}</code></span>
+                        <span>·</span>
+                        <span>তারিখ: {new Date(rep.createdAt).toLocaleDateString('bn-BD')}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      {rep.status === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => resolveReport(rep.id, 'dismissed')}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl cursor-pointer transition-colors"
+                          >
+                            খারিজ করুন
+                          </button>
+                          <button
+                            onClick={() => resolveReport(rep.id, 'resolved')}
+                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl cursor-pointer transition-colors shadow-xs"
+                          >
+                            পদক্ষেপ সম্পন্ন
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">পর্যালোচিত</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
       {activeAdminTab === 'notices' && (
         <div className="space-y-6">
           {/* Create New Notice */}

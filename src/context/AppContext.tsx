@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   CommunityPost, 
   StudyMaterial, 
@@ -23,6 +23,7 @@ import {
   INITIAL_LOGS,
   INITIAL_COMMENTS
 } from '../services/seedData';
+import { fetchSharedServerState, pushSharedServerUpdate } from '../services/apiService';
 import { useAuth } from './AuthContext';
 
 export type ActiveTab = 'home' | 'study' | 'books' | 'lostfound' | 'community' | 'notifications' | 'profile' | 'admin';
@@ -106,7 +107,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Persistent States
+  // Persistent States initialized from localStorage or seed fallback
   const [settings, setSettings] = useState<SiteSettings>(() => {
     const saved = localStorage.getItem('chz_settings');
     return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
@@ -163,17 +164,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_LOGS;
   });
 
-  // Sync to localStorage
-  useEffect(() => { localStorage.setItem('chz_settings', JSON.stringify(settings)); }, [settings]);
-  useEffect(() => { localStorage.setItem('chz_notices', JSON.stringify(notices)); }, [notices]);
-  useEffect(() => { localStorage.setItem('chz_posts', JSON.stringify(posts)); }, [posts]);
-  useEffect(() => { localStorage.setItem('chz_comments', JSON.stringify(comments)); }, [comments]);
-  useEffect(() => { localStorage.setItem('chz_study', JSON.stringify(studyMaterials)); }, [studyMaterials]);
-  useEffect(() => { localStorage.setItem('chz_books', JSON.stringify(books)); }, [books]);
-  useEffect(() => { localStorage.setItem('chz_lostfound', JSON.stringify(lostFoundItems)); }, [lostFoundItems]);
-  useEffect(() => { localStorage.setItem('chz_notifs', JSON.stringify(notifications)); }, [notifications]);
-  useEffect(() => { localStorage.setItem('chz_reports', JSON.stringify(reports)); }, [reports]);
-  useEffect(() => { localStorage.setItem('chz_logs', JSON.stringify(activityLogs)); }, [activityLogs]);
+  // Track server version to avoid overwriting and prevent redundant state sets
+  const lastServerTimestampRef = useRef<string>('');
+  const isInitialLoadDoneRef = useRef<boolean>(false);
+
+  // Background Live Sync: fetch latest changes from /api/sync every 3 seconds
+  useEffect(() => {
+    let isMounted = true;
+
+    const syncFromServer = async () => {
+      const serverState = await fetchSharedServerState();
+      if (!serverState || !isMounted) return;
+
+      const serverTimestamp = serverState.updatedAt || '';
+      // Only apply if initial load or new server updates are present
+      if (!isInitialLoadDoneRef.current || (serverTimestamp && serverTimestamp !== lastServerTimestampRef.current)) {
+        lastServerTimestampRef.current = serverTimestamp;
+
+        if (serverState.settings) {
+          setSettings(serverState.settings);
+          localStorage.setItem('chz_settings', JSON.stringify(serverState.settings));
+        }
+        if (Array.isArray(serverState.notices) && serverState.notices.length > 0) {
+          setNotices(serverState.notices);
+          localStorage.setItem('chz_notices', JSON.stringify(serverState.notices));
+        }
+        if (Array.isArray(serverState.posts) && serverState.posts.length > 0) {
+          setPosts(serverState.posts);
+          localStorage.setItem('chz_posts', JSON.stringify(serverState.posts));
+        }
+        if (serverState.comments && typeof serverState.comments === 'object') {
+          setComments(serverState.comments);
+          localStorage.setItem('chz_comments', JSON.stringify(serverState.comments));
+        }
+        if (Array.isArray(serverState.studyMaterials) && serverState.studyMaterials.length > 0) {
+          setStudyMaterials(serverState.studyMaterials);
+          localStorage.setItem('chz_study', JSON.stringify(serverState.studyMaterials));
+        }
+        if (Array.isArray(serverState.books) && serverState.books.length > 0) {
+          setBooks(serverState.books);
+          localStorage.setItem('chz_books', JSON.stringify(serverState.books));
+        }
+        if (Array.isArray(serverState.lostFoundItems) && serverState.lostFoundItems.length > 0) {
+          setLostFoundItems(serverState.lostFoundItems);
+          localStorage.setItem('chz_lostfound', JSON.stringify(serverState.lostFoundItems));
+        }
+        if (Array.isArray(serverState.notifications) && serverState.notifications.length > 0) {
+          setNotifications(serverState.notifications);
+          localStorage.setItem('chz_notifs', JSON.stringify(serverState.notifications));
+        }
+        if (Array.isArray(serverState.reports)) {
+          setReports(serverState.reports);
+          localStorage.setItem('chz_reports', JSON.stringify(serverState.reports));
+        }
+        if (Array.isArray(serverState.activityLogs)) {
+          setActivityLogs(serverState.activityLogs);
+          localStorage.setItem('chz_logs', JSON.stringify(serverState.activityLogs));
+        }
+
+        isInitialLoadDoneRef.current = true;
+      }
+    };
+
+    syncFromServer();
+    const interval = setInterval(syncFromServer, 3000);
+    window.addEventListener('focus', syncFromServer);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', syncFromServer);
+    };
+  }, []);
 
   // Toast Helpers
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -196,12 +258,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       details,
       timestamp: new Date().toLocaleString('bn-BD', { hour12: true }),
     };
-    setActivityLogs(prev => [newLog, ...prev]);
+    const updated = [newLog, ...activityLogs];
+    setActivityLogs(updated);
+    localStorage.setItem('chz_logs', JSON.stringify(updated));
+    pushSharedServerUpdate('activityLogs', updated);
   };
 
   // Settings
   const updateSettings = (newSettings: Partial<SiteSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
+    localStorage.setItem('chz_settings', JSON.stringify(updated));
+    pushSharedServerUpdate('settings', updated);
     logAdminAction('Site Settings Updated', 'ওয়েবসাইট কনফিগারেশন আপডেট করা হয়েছে');
     addToast('ওয়েবসাইট সেটিংস সফলভাবে সংরক্ষিত হয়েছে।', 'success');
   };
@@ -213,7 +281,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: 'notice_' + Date.now(),
       createdAt: new Date().toISOString(),
     };
-    setNotices(prev => [newNotice, ...prev]);
+    const updatedNotices = [newNotice, ...notices];
+    setNotices(updatedNotices);
+    localStorage.setItem('chz_notices', JSON.stringify(updatedNotices));
+    pushSharedServerUpdate('notices', updatedNotices);
+
     logAdminAction('Notice Created', `নতুন নোটিশ: ${notice.title}`);
     addToast('নতুন কলেজ নোটিশ প্রকাশিত হয়েছে।', 'success');
 
@@ -228,17 +300,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isRead: false,
       createdAt: new Date().toISOString(),
     };
-    setNotifications(prev => [broadcastNotif, ...prev]);
+    const updatedNotifs = [broadcastNotif, ...notifications];
+    setNotifications(updatedNotifs);
+    localStorage.setItem('chz_notifs', JSON.stringify(updatedNotifs));
+    pushSharedServerUpdate('notifications', updatedNotifs);
   };
 
   const updateNotice = (id: string, updates: Partial<CollegeNotice>) => {
-    setNotices(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
+    const updated = notices.map(n => n.id === id ? { ...n, ...updates } : n);
+    setNotices(updated);
+    localStorage.setItem('chz_notices', JSON.stringify(updated));
+    pushSharedServerUpdate('notices', updated);
     logAdminAction('Notice Updated', `আইডি: ${id}`);
     addToast('নোটিশ আপডেট করা হয়েছে।', 'success');
   };
 
   const deleteNotice = (id: string) => {
-    setNotices(prev => prev.filter(n => n.id !== id));
+    const updated = notices.filter(n => n.id !== id);
+    setNotices(updated);
+    localStorage.setItem('chz_notices', JSON.stringify(updated));
+    pushSharedServerUpdate('notices', updated);
     logAdminAction('Notice Deleted', `নোটিশ মোছা হয়েছে: ${id}`);
     addToast('নোটিশ মুছে ফেলা হয়েছে।', 'info');
   };
@@ -253,17 +334,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setPosts(prev => [newPost, ...prev]);
+    const updatedPosts = [newPost, ...posts];
+    setPosts(updatedPosts);
+    localStorage.setItem('chz_posts', JSON.stringify(updatedPosts));
+    pushSharedServerUpdate('posts', updatedPosts);
     addToast('কমিউনিটিতে পোস্ট সফলভাবে প্রকাশিত হয়েছে।', 'success');
   };
 
   const updatePost = (id: string, updates: Partial<CommunityPost>) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p));
+    const updated = posts.map(p => p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p);
+    setPosts(updated);
+    localStorage.setItem('chz_posts', JSON.stringify(updated));
+    pushSharedServerUpdate('posts', updated);
     addToast('পোস্ট আপডেট করা হয়েছে।', 'success');
   };
 
   const deletePost = (id: string) => {
-    setPosts(prev => prev.filter(p => p.id !== id));
+    const updated = posts.filter(p => p.id !== id);
+    setPosts(updated);
+    localStorage.setItem('chz_posts', JSON.stringify(updated));
+    pushSharedServerUpdate('posts', updated);
     if (isAdmin) {
       logAdminAction('Post Deleted', `পোস্ট রিমুভ করা হয়েছে: ${id}`);
     }
@@ -275,7 +365,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast('লাইক দিতে অনুগ্রহ করে লগইন করুন।', 'error');
       return;
     }
-    setPosts(prev => prev.map(post => {
+    const updated = posts.map(post => {
       if (post.id === postId) {
         const isLiked = post.likes.includes(currentUser.uid);
         const nextLikes = isLiked 
@@ -284,7 +374,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { ...post, likes: nextLikes };
       }
       return post;
-    }));
+    });
+    setPosts(updated);
+    localStorage.setItem('chz_posts', JSON.stringify(updated));
+    pushSharedServerUpdate('posts', updated);
   };
 
   const addComment = (postId: string, content: string) => {
@@ -303,12 +396,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       replies: [],
     };
 
-    setComments(prev => {
-      const list = prev[postId] ? [...prev[postId], newComment] : [newComment];
-      return { ...prev, [postId]: list };
-    });
+    const currentList = comments[postId] ? [...comments[postId], newComment] : [newComment];
+    const updatedComments = { ...comments, [postId]: currentList };
+    setComments(updatedComments);
+    localStorage.setItem('chz_comments', JSON.stringify(updatedComments));
+    pushSharedServerUpdate('comments', updatedComments);
 
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p));
+    const updatedPosts = posts.map(p => p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p);
+    setPosts(updatedPosts);
+    localStorage.setItem('chz_posts', JSON.stringify(updatedPosts));
+    pushSharedServerUpdate('posts', updatedPosts);
+
     addToast('মন্তব্য যুক্ত হয়েছে।', 'success');
 
     // Notify author if not commenting on own post
@@ -324,7 +422,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isRead: false,
         createdAt: new Date().toISOString(),
       };
-      setNotifications(prev => [notif, ...prev]);
+      const updatedNotifs = [notif, ...notifications];
+      setNotifications(updatedNotifs);
+      localStorage.setItem('chz_notifs', JSON.stringify(updatedNotifs));
+      pushSharedServerUpdate('notifications', updatedNotifs);
     }
   };
 
@@ -342,125 +443,172 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString(),
     };
 
-    setComments(prev => {
-      const currentPostComments = prev[postId] || [];
-      const updated = currentPostComments.map(c => {
-        if (c.id === commentId) {
-          return {
-            ...c,
-            replies: c.replies ? [...c.replies, newReply] : [newReply]
-          };
-        }
-        return c;
-      });
-      return { ...prev, [postId]: updated };
+    const currentPostComments = comments[postId] || [];
+    const updatedList = currentPostComments.map(c => {
+      if (c.id === commentId) {
+        return {
+          ...c,
+          replies: [...(c.replies || []), newReply],
+        };
+      }
+      return c;
     });
 
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p));
-    addToast('উত্তর যুক্ত হয়েছে।', 'success');
+    const updatedComments = { ...comments, [postId]: updatedList };
+    setComments(updatedComments);
+    localStorage.setItem('chz_comments', JSON.stringify(updatedComments));
+    pushSharedServerUpdate('comments', updatedComments);
+
+    const updatedPosts = posts.map(p => p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p);
+    setPosts(updatedPosts);
+    localStorage.setItem('chz_posts', JSON.stringify(updatedPosts));
+    pushSharedServerUpdate('posts', updatedPosts);
+
+    addToast('রিপ্লাই যুক্ত হয়েছে।', 'success');
   };
 
   const votePoll = (postId: string, optionId: string) => {
     if (!currentUser) {
-      addToast('ভোট দিতে লগইন করুন।', 'error');
+      addToast('ভোট দিতে অনুগ্রহ করে লগইন করুন।', 'error');
       return;
     }
-    setPosts(prev => prev.map(post => {
+    const updated = posts.map(post => {
       if (post.id === postId && post.poll) {
+        const hasVoted = post.poll.options.some(opt => opt.votes.includes(currentUser.uid));
+        if (hasVoted) {
+          addToast('আপনি ইতোমধ্যে এই পোলে ভোট দিয়েছেন।', 'info');
+          return post;
+        }
         const updatedOptions = post.poll.options.map(opt => {
-          // Remove user's previous votes from all options in this poll
-          const cleanVotes = opt.votes.filter(uid => uid !== currentUser.uid);
           if (opt.id === optionId) {
-            return { ...opt, votes: [...cleanVotes, currentUser.uid] };
+            return { ...opt, votes: [...opt.votes, currentUser.uid] };
           }
-          return { ...opt, votes: cleanVotes };
+          return opt;
         });
-        return { ...post, poll: { ...post.poll, options: updatedOptions } };
+        return {
+          ...post,
+          poll: {
+            ...post.poll,
+            options: updatedOptions,
+          },
+        };
       }
       return post;
-    }));
-    addToast('আপনার মতামত গৃহীত হয়েছে!', 'success');
+    });
+    setPosts(updated);
+    localStorage.setItem('chz_posts', JSON.stringify(updated));
+    pushSharedServerUpdate('posts', updated);
+    addToast('ভোট সফলভাবে গণনা করা হয়েছে!', 'success');
   };
 
   // Study Materials
   const uploadStudyMaterial = (mat: Omit<StudyMaterial, 'id' | 'createdAt' | 'updatedAt' | 'downloadCount' | 'isApproved'>) => {
-    // Check file size against site settings
-    if (mat.fileSizeMb > settings.maxFileUploadMb) {
-      addToast(`ফাইলের আকার অনুমোদিত সীমার বেশি (${settings.maxFileUploadMb}MB সর্বোচ্চ)।`, 'error');
-      return;
-    }
-
-    const isAutoApproved = isAdmin; // Admin uploads are approved automatically
+    // Admin uploads are auto-approved; students require admin moderation
+    const isApproved = isAdmin;
     const newMaterial: StudyMaterial = {
       ...mat,
       id: 'study_' + Date.now(),
       downloadCount: 0,
-      isApproved: isAutoApproved,
+      isApproved,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    setStudyMaterials(prev => [newMaterial, ...prev]);
+    const updated = [newMaterial, ...studyMaterials];
+    setStudyMaterials(updated);
+    localStorage.setItem('chz_study', JSON.stringify(updated));
+    pushSharedServerUpdate('studyMaterials', updated);
 
-    if (isAutoApproved) {
-      addToast('স্টাডি মেটেরিয়াল সরাসরি অনুমোদিত ও প্রকাশিত হয়েছে।', 'success');
+    if (isApproved) {
+      addToast('স্টাডি মেটেরিয়াল সফলভাবে পাবলিক করা হয়েছে!', 'success');
     } else {
-      addToast('ফাইল আপলোড সফল! এডমিন অনুমোদনের পর এটি সবার কাছে প্রদর্শিত হবে।', 'info');
+      addToast('ফাইল আপলোড সফল হয়েছে। এডমিন পর্যালোচনার পর এটি সক্রিয় হবে।', 'info');
     }
   };
 
   const approveStudyMaterial = (id: string) => {
-    setStudyMaterials(prev => prev.map(m => m.id === id ? { ...m, isApproved: true } : m));
-    const target = studyMaterials.find(m => m.id === id);
-    if (target) {
-      logAdminAction('Study Material Approved', `অনুমোদন করা হয়েছে: ${target.title}`);
-      // Notify uploader
+    let approvedTitle = '';
+    let targetUploaderId = '';
+
+    const updated = studyMaterials.map(m => {
+      if (m.id === id) {
+        approvedTitle = m.title;
+        targetUploaderId = m.uploaderId;
+        return { ...m, isApproved: true, updatedAt: new Date().toISOString() };
+      }
+      return m;
+    });
+
+    setStudyMaterials(updated);
+    localStorage.setItem('chz_study', JSON.stringify(updated));
+    pushSharedServerUpdate('studyMaterials', updated);
+
+    logAdminAction('Material Approved', `আইডি: ${id} (${approvedTitle})`);
+    addToast('স্টাডি মেটেরিয়াল অনুমোদিত হয়েছে।', 'success');
+
+    // Notify uploader
+    if (targetUploaderId) {
       const notif: NotificationItem = {
         id: 'notif_' + Date.now(),
-        userId: target.uploaderId,
-        title: 'স্টাডি মেটেরিয়াল অনুমোদিত',
-        message: `আপনার আপলোডকৃত "${target.title}" এডমিন কর্তৃক অনুমোদিত হয়েছে।`,
+        userId: targetUploaderId,
+        title: 'ফাইল অনুমোদিত হয়েছে! 🎉',
+        message: `আপনার আপলোডকৃত "${approvedTitle}" ফাইলটি এডমিন কর্তৃক অনুমোদিত ও সবার জন্য উন্মুক্ত করা হয়েছে।`,
         type: 'approval',
         linkTab: 'study',
         isRead: false,
         createdAt: new Date().toISOString(),
       };
-      setNotifications(prev => [notif, ...prev]);
+      const updatedNotifs = [notif, ...notifications];
+      setNotifications(updatedNotifs);
+      localStorage.setItem('chz_notifs', JSON.stringify(updatedNotifs));
+      pushSharedServerUpdate('notifications', updatedNotifs);
     }
-    addToast('স্টাডি মেটেরিয়াল সফলভাবে অনুমোদিত হয়েছে।', 'success');
   };
 
   const rejectStudyMaterial = (id: string, reason: string) => {
-    const target = studyMaterials.find(m => m.id === id);
-    setStudyMaterials(prev => prev.filter(m => m.id !== id));
-    if (target) {
-      logAdminAction('Study Material Rejected', `বাতিল: ${target.title} (কারণ: ${reason})`);
+    const item = studyMaterials.find(m => m.id === id);
+    const updated = studyMaterials.filter(m => m.id !== id);
+    setStudyMaterials(updated);
+    localStorage.setItem('chz_study', JSON.stringify(updated));
+    pushSharedServerUpdate('studyMaterials', updated);
+
+    logAdminAction('Material Rejected', `আইডি: ${id}, কারণ: ${reason}`);
+    addToast('স্টাডি মেটেরিয়াল বাতিল করা হয়েছে।', 'info');
+
+    if (item) {
       const notif: NotificationItem = {
         id: 'notif_' + Date.now(),
-        userId: target.uploaderId,
-        title: 'স্টাডি মেটেরিয়াল প্রত্যাখ্যাত',
-        message: `আপনার আপলোডকৃত ফাইলটি বাতিল করা হয়েছে। কারণ: ${reason}`,
+        userId: item.uploaderId,
+        title: 'ফাইল অনুমোদন বাতিল',
+        message: `আপনার আপলোডকৃত "${item.title}" ফাইলটি নীতিমালার পরিপন্থী হওয়ায় বাতিল করা হয়েছে। কারণ: ${reason}`,
         type: 'rejection',
         linkTab: 'study',
         isRead: false,
         createdAt: new Date().toISOString(),
       };
-      setNotifications(prev => [notif, ...prev]);
+      const updatedNotifs = [notif, ...notifications];
+      setNotifications(updatedNotifs);
+      localStorage.setItem('chz_notifs', JSON.stringify(updatedNotifs));
+      pushSharedServerUpdate('notifications', updatedNotifs);
     }
-    addToast('স্টাডি মেটেরিয়াল বাতিল করা হয়েছে।', 'info');
   };
 
   const deleteStudyMaterial = (id: string) => {
-    setStudyMaterials(prev => prev.filter(m => m.id !== id));
+    const updated = studyMaterials.filter(m => m.id !== id);
+    setStudyMaterials(updated);
+    localStorage.setItem('chz_study', JSON.stringify(updated));
+    pushSharedServerUpdate('studyMaterials', updated);
     if (isAdmin) {
-      logAdminAction('Study Material Deleted', `মুছে ফেলা হয়েছে: ${id}`);
+      logAdminAction('Material Deleted', `আইডি: ${id}`);
     }
     addToast('স্টাডি মেটেরিয়াল মুছে ফেলা হয়েছে।', 'info');
   };
 
   const incrementDownload = (id: string) => {
-    setStudyMaterials(prev => prev.map(m => m.id === id ? { ...m, downloadCount: m.downloadCount + 1 } : m));
-    addToast('ডাউনলোড শুরু হচ্ছে...', 'info');
+    const updated = studyMaterials.map(m => m.id === id ? { ...m, downloadCount: m.downloadCount + 1 } : m);
+    setStudyMaterials(updated);
+    localStorage.setItem('chz_study', JSON.stringify(updated));
+    pushSharedServerUpdate('studyMaterials', updated);
   };
 
   // Books
@@ -472,21 +620,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setBooks(prev => [newBook, ...prev]);
-    addToast('বইয়ের লিস্টিং সফলভাবে যুক্ত হয়েছে।', 'success');
+    const updated = [newBook, ...books];
+    setBooks(updated);
+    localStorage.setItem('chz_books', JSON.stringify(updated));
+    pushSharedServerUpdate('books', updated);
+    addToast('বইয়ের লিস্টিং সফলভাবে যুক্ত হয়েছে!', 'success');
   };
 
   const updateBookStatus = (id: string, status: BookListing['status']) => {
-    setBooks(prev => prev.map(b => b.id === id ? { ...b, status, updatedAt: new Date().toISOString() } : b));
-    addToast('বইয়ের স্ট্যাটাস আপডেট হয়েছে।', 'success');
+    const updated = books.map(b => b.id === id ? { ...b, status, updatedAt: new Date().toISOString() } : b);
+    setBooks(updated);
+    localStorage.setItem('chz_books', JSON.stringify(updated));
+    pushSharedServerUpdate('books', updated);
+    addToast(`বইয়ের স্ট্যাটাস পরিবর্তিত হয়েছে: ${status}`, 'success');
   };
 
   const deleteBookListing = (id: string) => {
-    setBooks(prev => prev.filter(b => b.id !== id));
+    const updated = books.filter(b => b.id !== id);
+    setBooks(updated);
+    localStorage.setItem('chz_books', JSON.stringify(updated));
+    pushSharedServerUpdate('books', updated);
     if (isAdmin) {
-      logAdminAction('Book Listing Removed', `বই রিমুভ করা হয়েছে: ${id}`);
+      logAdminAction('Book Listing Deleted', `বই রিমুভ করা হয়েছে: ${id}`);
     }
-    addToast('লিস্টিং মুছে ফেলা হয়েছে।', 'info');
+    addToast('বইয়ের লিস্টিং মুছে ফেলা হয়েছে।', 'info');
   };
 
   // Lost & Found
@@ -498,37 +655,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setLostFoundItems(prev => [newItem, ...prev]);
-    addToast(item.type === 'lost' ? 'হারানো বিজ্ঞপ্তির পোস্ট প্রকাশিত হয়েছে।' : 'প্রাপ্তি বিজ্ঞপ্তির পোস্ট প্রকাশিত হয়েছে।', 'success');
+    const updated = [newItem, ...lostFoundItems];
+    setLostFoundItems(updated);
+    localStorage.setItem('chz_lostfound', JSON.stringify(updated));
+    pushSharedServerUpdate('lostFoundItems', updated);
+    addToast('লস্ট অ্যান্ড ফাউন্ড পোস্ট যুক্ত হয়েছে!', 'success');
   };
 
   const updateLostFoundStatus = (id: string, status: LostFoundItem['status']) => {
-    setLostFoundItems(prev => prev.map(item => item.id === id ? { ...item, status, updatedAt: new Date().toISOString() } : item));
-    addToast('আইটেম স্ট্যাটাস আপডেট হয়েছে।', 'success');
+    const updated = lostFoundItems.map(item => item.id === id ? { ...item, status, updatedAt: new Date().toISOString() } : item);
+    setLostFoundItems(updated);
+    localStorage.setItem('chz_lostfound', JSON.stringify(updated));
+    pushSharedServerUpdate('lostFoundItems', updated);
+    addToast('আইটেমের স্ট্যাটাস আপডেট হয়েছে!', 'success');
   };
 
   const deleteLostFoundItem = (id: string) => {
-    setLostFoundItems(prev => prev.filter(item => item.id !== id));
+    const updated = lostFoundItems.filter(item => item.id !== id);
+    setLostFoundItems(updated);
+    localStorage.setItem('chz_lostfound', JSON.stringify(updated));
+    pushSharedServerUpdate('lostFoundItems', updated);
     if (isAdmin) {
-      logAdminAction('Lost&Found Removed', `আইটেম রিমুভ করা হয়েছে: ${id}`);
+      logAdminAction('Lost & Found Deleted', `আইটেম রিমুভ: ${id}`);
     }
     addToast('আইটেম মুছে ফেলা হয়েছে।', 'info');
   };
 
   // Notifications
-  const unreadNotifCount = notifications.filter(n => !n.isRead && (n.userId === currentUser?.uid || n.userId === 'all')).length;
-
   const markNotificationAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
+    setNotifications(updated);
+    localStorage.setItem('chz_notifs', JSON.stringify(updated));
+    pushSharedServerUpdate('notifications', updated);
   };
 
   const markAllNotificationsAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    addToast('সব নোটিফিকেশন পড়া হয়েছে চিহ্নিত করা হয়েছে।', 'info');
+    const updated = notifications.map(n => ({ ...n, isRead: true }));
+    setNotifications(updated);
+    localStorage.setItem('chz_notifs', JSON.stringify(updated));
+    pushSharedServerUpdate('notifications', updated);
+    addToast('সকল নোটিফিকেশন পড়া হয়েছে।', 'info');
   };
 
   const clearNotifications = () => {
     setNotifications([]);
+    localStorage.setItem('chz_notifs', JSON.stringify([]));
+    pushSharedServerUpdate('notifications', []);
     addToast('নোটিফিকেশন তালিকা পরিষ্কার করা হয়েছে।', 'info');
   };
 
@@ -540,73 +712,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    setReports(prev => [newReport, ...prev]);
+    const updated = [newReport, ...reports];
+    setReports(updated);
+    localStorage.setItem('chz_reports', JSON.stringify(updated));
+    pushSharedServerUpdate('reports', updated);
     addToast('আপনার অভিযোগটি জমা হয়েছে। এডমিন দ্রুত পর্যালোচনা করবেন।', 'success');
   };
 
   const resolveReport = (id: string, resolution: 'resolved' | 'dismissed') => {
-    setReports(prev => prev.map(r => r.id === id ? { ...r, status: resolution } : r));
-    logAdminAction('Report Resolved', `রিপোর্ট ${id} - স্ট্যাটাস: ${resolution}`);
-    addToast(resolution === 'resolved' ? 'রিপোর্টটি সমাধান করা হয়েছে।' : 'রিপোর্টটি খারিজ করা হয়েছে।', 'info');
+    const updated = reports.map(r => r.id === id ? { ...r, status: resolution } : r);
+    setReports(updated);
+    localStorage.setItem('chz_reports', JSON.stringify(updated));
+    pushSharedServerUpdate('reports', updated);
+    logAdminAction('Report Handled', `রিপোর্ট আইডি ${id} স্ট্যাটাস: ${resolution}`);
+    addToast(`রিপোর্ট সফলভাবে ${resolution === 'resolved' ? 'নিষ্পত্তি' : 'খারিজ'} করা হয়েছে।`, 'info');
   };
 
+  const unreadNotifCount = notifications.filter(n => !n.isRead && (n.userId === 'all' || n.userId === currentUser?.uid)).length;
+
   return (
-    <AppContext.Provider value={{
-      activeTab,
-      setActiveTab,
-      searchQuery,
-      setSearchQuery,
-      toasts,
-      addToast,
-      removeToast,
-
-      settings,
-      updateSettings,
-      notices,
-      addNotice,
-      updateNotice,
-      deleteNotice,
-
-      posts,
-      comments,
-      createPost,
-      updatePost,
-      deletePost,
-      toggleLikePost,
-      addComment,
-      addReply,
-      votePoll,
-
-      studyMaterials,
-      uploadStudyMaterial,
-      approveStudyMaterial,
-      rejectStudyMaterial,
-      deleteStudyMaterial,
-      incrementDownload,
-
-      books,
-      addBookListing,
-      updateBookStatus,
-      deleteBookListing,
-
-      lostFoundItems,
-      addLostFoundItem,
-      updateLostFoundStatus,
-      deleteLostFoundItem,
-
-      notifications,
-      unreadNotifCount,
-      markNotificationAsRead,
-      markAllNotificationsAsRead,
-      clearNotifications,
-
-      reports,
-      submitReport,
-      resolveReport,
-
-      activityLogs,
-      logAdminAction,
-    }}>
+    <AppContext.Provider
+      value={{
+        activeTab,
+        setActiveTab,
+        searchQuery,
+        setSearchQuery,
+        toasts,
+        addToast,
+        removeToast,
+        settings,
+        updateSettings,
+        notices,
+        addNotice,
+        updateNotice,
+        deleteNotice,
+        posts,
+        comments,
+        createPost,
+        updatePost,
+        deletePost,
+        toggleLikePost,
+        addComment,
+        addReply,
+        votePoll,
+        studyMaterials,
+        uploadStudyMaterial,
+        approveStudyMaterial,
+        rejectStudyMaterial,
+        deleteStudyMaterial,
+        incrementDownload,
+        books,
+        addBookListing,
+        updateBookStatus,
+        deleteBookListing,
+        lostFoundItems,
+        addLostFoundItem,
+        updateLostFoundStatus,
+        deleteLostFoundItem,
+        notifications,
+        unreadNotifCount,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        clearNotifications,
+        reports,
+        submitReport,
+        resolveReport,
+        activityLogs,
+        logAdminAction,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

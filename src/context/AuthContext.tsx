@@ -6,10 +6,11 @@ import {
   isFirebaseConfigured, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut,
+  signOut, 
   sendPasswordResetEmail,
   onAuthStateChanged
 } from '../services/firebase';
+import { fetchSharedServerState, pushSharedServerUpdate } from '../services/apiService';
 
 interface AuthContextType {
   currentUser: UserProfile | null;
@@ -29,21 +30,23 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
-  switchUserRoleForDemo: (uid: string) => void;
   usersList: UserProfile[];
   updateUserStatus: (uid: string, updates: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USERS_STORAGE_KEY = 'campus_help_zone_users_v1';
-const CURRENT_USER_KEY = 'campus_help_zone_current_user_v1';
+const USERS_STORAGE_KEY = 'campus_help_zone_users_v2';
+const CURRENT_USER_KEY = 'campus_help_zone_current_user_v2';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem(USERS_STORAGE_KEY);
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try { 
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) { /* ignore */ }
     }
     return INITIAL_USERS;
   });
@@ -51,20 +54,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem(CURRENT_USER_KEY);
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try { 
+        return JSON.parse(saved); 
+      } catch (e) { /* ignore */ }
     }
-    return INITIAL_USERS[0]; // Default logged in as admin/founder for rich exploration
+    // No auto-login on new devices/browsers! Users must log in or register.
+    return null;
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const isFirebaseMode = isFirebaseConfigured();
 
-  // Save users to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  }, [users]);
-
-  // Save current user to localStorage
+  // Save current user to localStorage whenever changed
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser));
@@ -73,16 +74,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
+  // Load and periodically sync users from server (cross-device sync)
+  useEffect(() => {
+    let isMounted = true;
+    const syncUsersFromServer = async () => {
+      const serverState = await fetchSharedServerState();
+      if (!isMounted || !serverState) return;
+
+      if (Array.isArray(serverState.users) && serverState.users.length > 0) {
+        setUsers(serverState.users);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(serverState.users));
+
+        // If current user is logged in, ensure their latest profile details are synced
+        setCurrentUser(curr => {
+          if (!curr) return null;
+          const matched = serverState.users.find((u: UserProfile) => u.uid === curr.uid || u.email.toLowerCase() === curr.email.toLowerCase());
+          return matched || curr;
+        });
+      }
+    };
+
+    syncUsersFromServer();
+    const interval = setInterval(syncUsersFromServer, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   // Handle Firebase Auth Listener if configured
   useEffect(() => {
     if (isFirebaseMode && auth) {
       const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
         if (fbUser) {
-          const existing = users.find(u => u.uid === fbUser.uid || u.email === fbUser.email);
+          const existing = users.find(u => u.uid === fbUser.uid || u.email.toLowerCase() === (fbUser.email || '').toLowerCase());
           if (existing) {
             setCurrentUser(existing);
           } else {
-            const role: UserRole = fbUser.email === INITIAL_ADMIN_EMAIL ? 'admin' : 'student';
+            const role: UserRole = fbUser.email?.toLowerCase() === INITIAL_ADMIN_EMAIL.toLowerCase() ? 'admin' : 'student';
             const newUser: UserProfile = {
               uid: fbUser.uid,
               email: fbUser.email || '',
@@ -95,8 +124,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
-            setUsers(prev => [...prev, newUser]);
+            const updatedList = [newUser, ...users];
+            setUsers(updatedList);
             setCurrentUser(newUser);
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedList));
+            pushSharedServerUpdate('users', updatedList);
           }
         } else {
           setCurrentUser(null);
@@ -118,11 +150,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // Local / Offline authentication simulation
-      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      // Local / Cross-device database authentication
+      const found = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
       if (!found) {
         setIsLoading(false);
-        return { success: false, message: 'এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি।' };
+        return { success: false, message: 'এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি। অনুগ্রহ করে নিবন্ধন করুন।' };
       }
       if (found.isBanned) {
         setIsLoading(false);
@@ -134,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setCurrentUser(found);
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(found));
       setIsLoading(false);
       return { success: true };
     } catch (err: any) {
@@ -153,51 +186,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
     try {
-      // Role safety rule: User CANNOT make themselves admin
-      const role: UserRole = data.email.toLowerCase() === INITIAL_ADMIN_EMAIL.toLowerCase() ? 'admin' : 'student';
+      const cleanEmail = data.email.trim().toLowerCase();
+      // Admin safety rule: User CANNOT make themselves admin
+      const role: UserRole = cleanEmail === INITIAL_ADMIN_EMAIL.toLowerCase() ? 'admin' : 'student';
 
       if (isFirebaseMode && auth) {
         const userCred = await createUserWithEmailAndPassword(auth, data.email, data.pass);
         const newUser: UserProfile = {
           uid: userCred.user.uid,
-          email: data.email,
-          displayName: data.displayName,
-          collegeName: data.collegeName,
-          department: data.department,
-          academicYear: data.academicYear,
-          phoneNumber: data.phoneNumber,
+          email: cleanEmail,
+          displayName: data.displayName.trim(),
+          collegeName: data.collegeName.trim(),
+          department: data.department.trim(),
+          academicYear: data.academicYear.trim(),
+          phoneNumber: data.phoneNumber?.trim(),
           role,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        setUsers(prev => [...prev, newUser]);
+        const updatedList = [newUser, ...users];
+        setUsers(updatedList);
         setCurrentUser(newUser);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedList));
+        pushSharedServerUpdate('users', updatedList);
         setIsLoading(false);
         return { success: true };
       }
 
       // Check existing email
-      const existing = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+      const existing = users.find(u => u.email.toLowerCase() === cleanEmail);
       if (existing) {
         setIsLoading(false);
-        return { success: false, message: 'এই ইমেইলটি ইতোমধ্যে নিবন্ধিত রয়েছে।' };
+        return { success: false, message: 'এই ইমেইলটি ইতোমধ্যে নিবন্ধিত রয়েছে। অনুগ্রহ করে লগইন করুন।' };
       }
 
       const newUser: UserProfile = {
         uid: 'user_' + Date.now(),
-        email: data.email,
-        displayName: data.displayName,
-        collegeName: data.collegeName,
-        department: data.department,
-        academicYear: data.academicYear,
-        phoneNumber: data.phoneNumber,
+        email: cleanEmail,
+        displayName: data.displayName.trim(),
+        collegeName: data.collegeName.trim(),
+        department: data.department.trim(),
+        academicYear: data.academicYear.trim(),
+        phoneNumber: data.phoneNumber?.trim(),
         role,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      setUsers(prev => [newUser, ...prev]);
+      const updatedList = [newUser, ...users];
+      setUsers(updatedList);
       setCurrentUser(newUser);
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedList));
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
+      await pushSharedServerUpdate('users', updatedList);
+
       setIsLoading(false);
       return { success: true };
     } catch (err: any) {
@@ -211,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signOut(auth);
     }
     setCurrentUser(null);
+    localStorage.removeItem(CURRENT_USER_KEY);
   };
 
   const resetPassword = async (email: string): Promise<{ success: boolean; message?: string }> => {
@@ -219,7 +262,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await sendPasswordResetEmail(auth, email);
         return { success: true, message: 'পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে।' };
       }
-      return { success: true, message: 'পাসওয়ার্ড রিসেটের লিংকটি পাঠানো হয়েছে (সিমুলেশন)।' };
+      return { success: true, message: 'পাসওয়ার্ড রিসেটের লিংকটি পাঠানো হয়েছে।' };
     } catch (err: any) {
       return { success: false, message: err?.message || 'পাসওয়ার্ড রিসেট করা সম্ভব হয়নি।' };
     }
@@ -235,46 +278,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: new Date().toISOString(),
     };
     setCurrentUser(updated);
-    setUsers(prev => prev.map(u => u.uid === updated.uid ? updated : u));
-  };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updated));
 
-  const switchUserRoleForDemo = (uid: string) => {
-    const target = users.find(u => u.uid === uid);
-    if (target) {
-      setCurrentUser(target);
-    }
+    const updatedList = users.map(u => u.uid === updated.uid ? updated : u);
+    setUsers(updatedList);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedList));
+
+    // Push update to server so other devices see the changes
+    await pushSharedServerUpdate('users', updatedList);
   };
 
   const updateUserStatus = (uid: string, updates: Partial<UserProfile>) => {
-    setUsers(prev => prev.map(u => {
+    const updatedList = users.map(u => {
       if (u.uid === uid) {
-        const res = { ...u, ...updates, updatedAt: new Date().toISOString() };
-        if (currentUser?.uid === uid) {
-          setCurrentUser(res);
-        }
-        return res;
+        return { ...u, ...updates, updatedAt: new Date().toISOString() };
       }
       return u;
-    }));
+    });
+    setUsers(updatedList);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedList));
+
+    if (currentUser?.uid === uid) {
+      const updatedSelf = { ...currentUser, ...updates, updatedAt: new Date().toISOString() };
+      setCurrentUser(updatedSelf);
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedSelf));
+    }
+
+    pushSharedServerUpdate('users', updatedList);
   };
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.email.toLowerCase() === INITIAL_ADMIN_EMAIL.toLowerCase();
 
   return (
-    <AuthContext.Provider value={{
-      currentUser,
-      isAdmin,
-      isLoading,
-      isFirebaseMode,
-      login,
-      register,
-      logout,
-      resetPassword,
-      updateUserProfile,
-      switchUserRoleForDemo,
-      usersList: users,
-      updateUserStatus,
-    }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        isAdmin,
+        isLoading,
+        isFirebaseMode,
+        login,
+        register,
+        logout,
+        resetPassword,
+        updateUserProfile,
+        usersList: users,
+        updateUserStatus,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

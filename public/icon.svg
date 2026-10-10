@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#312e81" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#grad)" />
+  <!-- Graduation Cap Icon -->
+  <g transform="translate(106, 126)" fill="#ffffff" filter="url(#shadow)">
+    <!-- Mortarboard Diamond -->
+    <path d="M150 20 L290 85 L150 150 L10 85 Z" />
+    <!-- Cap Underbody / Skullcap -->
+    <path d="M55 125 L55 185 C55 235 245 235 245 185 L245 125 C220 145 180 155 150 155 C120 155 80 145 55 125 Z" opacity="0.95" />
+    <!-- Tassel String and Pendant -->
+    <path d="M265 95 L265 195 Q265 210 275 220 L275 245 L255 245 L255 220 Q265 210 265 195 Z" fill="#fde047" />
+    <circle cx="150" cy="85" r="8" fill="#fde047" />
+  </g>
+  <!-- Book / Helping Hand Ribbon -->
+  <g transform="translate(156, 380)" fill="#ffffff" opacity="0.9">
+    <rect x="0" y="0" width="200" height="12" rx="6" />
+    <circle cx="100" cy="6" r="14" fill="#fde047" />
+  </g>
+</svg>

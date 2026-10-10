@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { 
@@ -17,10 +17,10 @@ import {
   EyeOff,
   Clock,
   CheckCircle2,
-  Lock,
-  ArrowRight
+  Camera,
+  Upload
 } from 'lucide-react';
-import { INITIAL_USERS } from '../../services/seedData';
+import { compressImageFile } from '../../utils/imageUtils';
 
 interface ProfileViewProps {
   onOpenEditProfile: () => void;
@@ -28,7 +28,7 @@ interface ProfileViewProps {
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onOpenAuth }) => {
-  const { currentUser, isAdmin, logout, switchUserRoleForDemo, isFirebaseMode } = useAuth();
+  const { currentUser, isAdmin, logout, updateUserProfile } = useAuth();
   const { 
     posts, 
     studyMaterials, 
@@ -38,7 +38,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
     addToast 
   } = useApp();
 
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [activeSubTab, setActiveSubTab] = useState<'posts' | 'study' | 'books' | 'lostfound'>('posts');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   if (!currentUser) {
     return (
@@ -60,6 +62,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
     );
   }
 
+  // Direct Gallery Photo Selector
+  const handleDirectGalleryPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const optimizedBase64 = await compressImageFile(file, 400, 400, 0.85);
+      await updateUserProfile({ photoURL: optimizedBase64 });
+      addToast('গ্যালারি থেকে প্রোফাইল ছবি সফলভাবে যুক্ত হয়েছে!', 'success');
+    } catch (err: any) {
+      addToast(err?.message || 'ছবি আপলোড করতে সমস্যা হয়েছে।', 'error');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = '';
+      }
+    }
+  };
+
   // Filter user's own contributions
   const myPosts = posts.filter(p => p.authorId === currentUser.uid);
   const myStudy = studyMaterials.filter(s => s.uploaderId === currentUser.uid);
@@ -68,21 +90,52 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Hidden File Input for Direct Gallery Selection */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/jpg, image/webp"
+        onChange={handleDirectGalleryPhoto}
+        className="hidden"
+      />
+
       {/* Profile Header Card */}
       <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-slate-100">
           <div className="flex items-center gap-4">
-            {currentUser.photoURL ? (
-              <img
-                src={currentUser.photoURL}
-                alt={currentUser.displayName}
-                className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-100 shadow-xs"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-indigo-600 text-white font-extrabold text-2xl flex items-center justify-center shadow-xs">
-                {currentUser.displayName.charAt(0)}
+            {/* Avatar with Direct Gallery Trigger */}
+            <div 
+              onClick={() => galleryInputRef.current?.click()}
+              className="relative group shrink-0 cursor-pointer"
+              title="গ্যালারি থেকে সরাসরি ছবি নির্বাচন করতে ক্লিক করুন"
+            >
+              {currentUser.photoURL ? (
+                <img
+                  src={currentUser.photoURL}
+                  alt={currentUser.displayName}
+                  className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-100 shadow-xs group-hover:opacity-80 transition-opacity"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-indigo-600 text-white font-extrabold text-2xl flex items-center justify-center shadow-xs group-hover:bg-indigo-700 transition-colors">
+                  {currentUser.displayName.charAt(0)}
+                </div>
+              )}
+
+              {/* Direct Gallery Click Button Overlay */}
+              <div
+                className="absolute inset-0 bg-black/40 text-white rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[10px] font-bold"
+              >
+                <Camera className="w-5 h-5 mb-0.5" />
+                <span>{isUploadingPhoto ? 'আপলোড হচ্ছে...' : 'গ্যালারি'}</span>
               </div>
-            )}
+
+              <div
+                className="sm:hidden absolute -bottom-1 -right-1 p-1.5 bg-indigo-600 text-white rounded-full shadow-md"
+                title="গ্যালারি থেকে ছবি সিলেক্ট করুন"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </div>
+            </div>
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -95,7 +148,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
                     প্রধান এডমিন
                   </span>
                 ) : (
-                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
                     শিক্ষার্থী
                   </span>
                 )}
@@ -117,10 +170,37 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
                   {currentUser.academicYear}
                 </span>
               </div>
+
+              {/* Direct Photo Change Link */}
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                disabled={isUploadingPhoto}
+                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 pt-0.5 cursor-pointer disabled:opacity-50"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>
+                  {isUploadingPhoto
+                    ? 'ছবি আপলোড হচ্ছে...'
+                    : currentUser.photoURL
+                    ? 'গ্যালারি থেকে ছবি পরিবর্তন করুন'
+                    : 'গ্যালারি থেকে সরাসরি ছবি যোগ করুন'}
+                </span>
+              </button>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={isUploadingPhoto}
+              className="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-indigo-100 disabled:opacity-50"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>গ্যালারি থেকে ফটো</span>
+            </button>
+
             <button
               onClick={onOpenEditProfile}
               className="flex-1 sm:flex-initial px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -170,26 +250,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
                 </span>
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Demo Fast Switcher */}
-        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2 text-xs">
-          <span className="text-slate-500 font-medium">রোল পরীক্ষা করতে অন্য আইডিতে পরিবর্তন করুন:</span>
-          <div className="flex gap-1.5">
-            {INITIAL_USERS.map((u) => (
-              <button
-                key={u.uid}
-                onClick={() => switchUserRoleForDemo(u.uid)}
-                className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border cursor-pointer transition-colors ${
-                  currentUser.uid === u.uid
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {u.displayName.split(' ')[0]} ({u.role === 'admin' ? 'এডমিন' : 'শিক্ষার্থী'})
-              </button>
-            ))}
           </div>
         </div>
       </div>

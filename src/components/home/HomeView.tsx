@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { CommunityPost } from '../../types';
 
+import { AppDownloadCard } from './AppDownloadCard';
+
 interface HomeViewProps {
   onOpenCreatePost: () => void;
   onSelectPost: (post: CommunityPost) => void;
@@ -181,6 +183,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <p className="text-xs text-slate-500 leading-snug">গ্রুপ স্টাডি, টিউশন ও আলোচনা</p>
         </button>
       </div>
+
+      {/* App Download & PWA Install Card */}
+      <AppDownloadCard />
 
       {/* Urgent Help Section */}
       {urgentHelpPosts.length > 0 && (
