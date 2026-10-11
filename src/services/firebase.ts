@@ -38,7 +38,7 @@ const firebaseConfig = {
   appId: (bundledConfig && bundledConfig.appId) || import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const databaseId = (bundledConfig && bundledConfig.firestoreDatabaseId) || undefined;
+const databaseId = ((bundledConfig as any)?.firestoreDatabaseId) || import.meta.env.VITE_FIREBASE_DATABASE_ID || undefined;
 
 export const isFirebaseConfigured = (): boolean => {
   return !!(

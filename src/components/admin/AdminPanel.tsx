@@ -32,7 +32,8 @@ import {
   Book,
   Tag,
   Flag,
-  Filter
+  Filter,
+  Loader2
 } from 'lucide-react';
 import { StudyMaterial, CollegeNotice, UserProfile, ReportItem, BookListing, LostFoundItem } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
@@ -116,6 +117,7 @@ export const AdminPanel: React.FC = () => {
   const [isNoticeActive, setIsNoticeActive] = useState(settings.isNoticeActive);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(settings.isMaintenanceMode);
   const [maxFileUploadMb, setMaxFileUploadMb] = useState(settings.maxFileUploadMb);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Sync form inputs when remote Firestore/server state updates
   React.useEffect(() => {
@@ -159,16 +161,21 @@ export const AdminPanel: React.FC = () => {
     u.collegeName.toLowerCase().includes(userSearch.toLowerCase())
   );
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
-      siteName,
-      siteDescription,
-      bannerNotice,
-      isNoticeActive,
-      isMaintenanceMode,
-      maxFileUploadMb: Number(maxFileUploadMb),
-    });
+    setIsSavingSettings(true);
+    try {
+      await updateSettings({
+        siteName,
+        siteDescription,
+        bannerNotice,
+        isNoticeActive,
+        isMaintenanceMode,
+        maxFileUploadMb: Number(maxFileUploadMb),
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
   };
 
   const handleCreateNotice = (e: React.FormEvent) => {
@@ -1352,9 +1359,11 @@ export const AdminPanel: React.FC = () => {
 
             <button
               type="submit"
-              className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+              disabled={isSavingSettings}
+              className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-2"
             >
-              সেটিংস সংরক্ষণ করুন
+              {isSavingSettings && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isSavingSettings ? 'সংরক্ষণ করা হচ্ছে...' : 'সেটিংস সংরক্ষণ করুন'}</span>
             </button>
           </form>
         </div>

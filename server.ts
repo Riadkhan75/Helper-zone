@@ -16,9 +16,27 @@ import {
   INITIAL_USERS,
   INITIAL_COMMENTS
 } from './src/services/seedData.ts';
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase Firestore cloud bridge for Node.js server
+let serverDb: any = null;
+try {
+  const configPath = path.join(__dirname, 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    const fbConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (fbConfig.apiKey && fbConfig.projectId) {
+      const fbApp = getApps().length === 0 ? initializeApp(fbConfig, 'campus-server') : getApps()[0];
+      serverDb = fbConfig.firestoreDatabaseId ? getFirestore(fbApp, fbConfig.firestoreDatabaseId) : getFirestore(fbApp);
+      console.log('server.ts connected to Firestore cloud database:', fbConfig.firestoreDatabaseId || '(default)');
+    }
+  }
+} catch (e) {
+  console.warn('server.ts: Note: Firebase cloud bridge not active:', e);
+}
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -123,6 +141,17 @@ app.post('/api/sync', (req, res) => {
   if (type && payload !== undefined) {
     (currentDb as any)[type] = payload;
     saveDb();
+
+    // Broadcast mutation to Firestore cloud
+    if (serverDb) {
+      setDoc(doc(serverDb, 'campus_sync', type), {
+        payload,
+        updatedAt: currentDb.updatedAt,
+      }, { merge: true }).catch((err: any) => {
+        console.warn('server.ts Firestore sync failed:', err?.message || err);
+      });
+    }
+
     return res.json({ success: true, timestamp: currentDb.updatedAt });
   }
 
@@ -130,6 +159,18 @@ app.post('/api/sync', (req, res) => {
   if (req.body.data) {
     currentDb = { ...currentDb, ...req.body.data };
     saveDb();
+
+    if (serverDb && typeof req.body.data === 'object') {
+      Object.keys(req.body.data).forEach((k) => {
+        setDoc(doc(serverDb, 'campus_sync', k), {
+          payload: req.body.data[k],
+          updatedAt: currentDb.updatedAt,
+        }, { merge: true }).catch((err: any) => {
+          console.warn('server.ts Firestore bulk sync failed for', k, err?.message || err);
+        });
+      });
+    }
+
     return res.json({ success: true, timestamp: currentDb.updatedAt });
   }
 

@@ -188,6 +188,8 @@ export interface SiteSettings {
   isMaintenanceMode: boolean;
   maxFileUploadMb: number;
   allowedFileTypes: string[];
+  logoUrl?: string;
+  categories?: string[];
 }
 
 export interface ActivityLog {

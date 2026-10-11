@@ -9,6 +9,8 @@ import {
   onSnapshot 
 } from './firebase';
 
+export { isFirebaseConfigured };
+
 /**
  * Universal Cross-Device & Cross-Deployment Sync Service
  * Seamlessly connects Google AI Studio, Vercel deployments,
@@ -115,6 +117,7 @@ export const subscribeToRealtimeSync = (
   try {
     const unsub = onSnapshot(collection(db, path), (snapshot) => {
       snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') return;
         const id = change.doc.id;
         const data = change.doc.data();
         if (data && data.payload !== undefined) {
@@ -169,7 +172,6 @@ export const fetchSharedServerState = async (): Promise<SharedServerState | null
   try {
     const res = await fetch(endpoint, { cache: 'no-store' });
     if (!res.ok) {
-      // If relative endpoint on Vercel failed, try direct AI Studio live URL
       if (endpoint === '/api/sync' && typeof window !== 'undefined' && !window.location.hostname.includes('asia-east1.run.app')) {
         const directRes = await fetch(`${PRIMARY_AI_STUDIO_URL}/api/sync`, { cache: 'no-store' });
         if (directRes.ok) {
@@ -185,7 +187,6 @@ export const fetchSharedServerState = async (): Promise<SharedServerState | null
     }
     return null;
   } catch (err) {
-    // If local fetch failed, try direct AI Studio live URL as secondary bridge
     try {
       if (typeof window !== 'undefined' && !window.location.hostname.includes('asia-east1.run.app')) {
         const directRes = await fetch(`${PRIMARY_AI_STUDIO_URL}/api/sync`, { cache: 'no-store' });
@@ -236,7 +237,6 @@ export const pushSharedServerUpdate = async (type: string, payload: any): Promis
     });
     httpSuccess = res.ok;
 
-    // If failed on external host, try direct push to AI Studio server
     if (!httpSuccess && typeof window !== 'undefined' && !window.location.hostname.includes('asia-east1.run.app')) {
       await fetch(`${PRIMARY_AI_STUDIO_URL}/api/sync`, {
         method: 'POST',
@@ -245,7 +245,6 @@ export const pushSharedServerUpdate = async (type: string, payload: any): Promis
       });
     }
   } catch (err) {
-    // Attempt direct AI Studio server push as backup
     try {
       if (typeof window !== 'undefined' && !window.location.hostname.includes('asia-east1.run.app')) {
         await fetch(`${PRIMARY_AI_STUDIO_URL}/api/sync`, {

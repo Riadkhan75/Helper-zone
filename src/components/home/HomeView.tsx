@@ -93,7 +93,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight text-balance">
-            ক্যাম্পাস সংক্রান্ত যেকোনো প্রয়োজনে শিক্ষার্থীদের সাথে যুক্ত থাকুন
+            {settings.siteName ? `${settings.siteName} — শিক্ষার্থীদের সার্বিক প্ল্যাটফর্ম` : 'ক্যাম্পাস সংক্রান্ত যেকোনো প্রয়োজনে শিক্ষার্থীদের পাশে'}
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">

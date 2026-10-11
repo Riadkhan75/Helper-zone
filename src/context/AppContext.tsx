@@ -26,7 +26,8 @@ import {
 import { 
   fetchSharedServerState, 
   pushSharedServerUpdate, 
-  subscribeToRealtimeSync 
+  subscribeToRealtimeSync,
+  isFirebaseConfigured
 } from '../services/apiService';
 import { useAuth } from './AuthContext';
 
@@ -49,7 +50,7 @@ interface AppContextType {
 
   // Site Settings & Notices
   settings: SiteSettings;
-  updateSettings: (newSettings: Partial<SiteSettings>) => void;
+  updateSettings: (newSettings: Partial<SiteSettings>) => Promise<boolean>;
   notices: CollegeNotice[];
   addNotice: (notice: Omit<CollegeNotice, 'id' | 'createdAt'>) => void;
   updateNotice: (id: string, updates: Partial<CollegeNotice>) => void;
@@ -213,7 +214,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
-    // 2. HTTP Sync Bridge: fetches consolidated state periodically
+    // 2. HTTP Sync Bridge: fetches initial consolidated state & fallback
     const syncFromServer = async () => {
       const serverState = await fetchSharedServerState();
       if (!serverState || !isMounted) return;
@@ -227,11 +228,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setSettings(serverState.settings);
           localStorage.setItem('chz_settings', JSON.stringify(serverState.settings));
         }
-        if (Array.isArray(serverState.notices) && serverState.notices.length > 0) {
+        if (Array.isArray(serverState.notices)) {
           setNotices(serverState.notices);
           localStorage.setItem('chz_notices', JSON.stringify(serverState.notices));
         }
-        if (Array.isArray(serverState.posts) && serverState.posts.length > 0) {
+        if (Array.isArray(serverState.posts)) {
           setPosts(serverState.posts);
           localStorage.setItem('chz_posts', JSON.stringify(serverState.posts));
         }
@@ -239,19 +240,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setComments(serverState.comments);
           localStorage.setItem('chz_comments', JSON.stringify(serverState.comments));
         }
-        if (Array.isArray(serverState.studyMaterials) && serverState.studyMaterials.length > 0) {
+        if (Array.isArray(serverState.studyMaterials)) {
           setStudyMaterials(serverState.studyMaterials);
           localStorage.setItem('chz_study', JSON.stringify(serverState.studyMaterials));
         }
-        if (Array.isArray(serverState.books) && serverState.books.length > 0) {
+        if (Array.isArray(serverState.books)) {
           setBooks(serverState.books);
           localStorage.setItem('chz_books', JSON.stringify(serverState.books));
         }
-        if (Array.isArray(serverState.lostFoundItems) && serverState.lostFoundItems.length > 0) {
+        if (Array.isArray(serverState.lostFoundItems)) {
           setLostFoundItems(serverState.lostFoundItems);
           localStorage.setItem('chz_lostfound', JSON.stringify(serverState.lostFoundItems));
         }
-        if (Array.isArray(serverState.notifications) && serverState.notifications.length > 0) {
+        if (Array.isArray(serverState.notifications)) {
           setNotifications(serverState.notifications);
           localStorage.setItem('chz_notifs', JSON.stringify(serverState.notifications));
         }
@@ -268,14 +269,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
+    // Initial load
     syncFromServer();
-    const interval = setInterval(syncFromServer, 3000);
+
+    // Only poll HTTP endpoint if Firebase real-time sync is not available
+    let interval: any = null;
+    if (!isFirebaseConfigured()) {
+      interval = setInterval(syncFromServer, 4000);
+    }
     window.addEventListener('focus', syncFromServer);
 
     return () => {
       isMounted = false;
       unsubscribeRealtime();
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('focus', syncFromServer);
     };
   }, []);
@@ -308,13 +315,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Settings
-  const updateSettings = (newSettings: Partial<SiteSettings>) => {
+  const updateSettings = async (newSettings: Partial<SiteSettings>): Promise<boolean> => {
     const updated = { ...settings, ...newSettings };
+    const success = await pushSharedServerUpdate('settings', updated);
+    if (!success && isFirebaseConfigured()) {
+      addToast('সার্ভারে সেটিংস আপডেট ব্যর্থ হয়েছে। অনুগ্রহ করে ইন্টারনেট ও অনুমতি চেক করুন।', 'error');
+      return false;
+    }
     setSettings(updated);
     localStorage.setItem('chz_settings', JSON.stringify(updated));
-    pushSharedServerUpdate('settings', updated);
-    logAdminAction('Site Settings Updated', 'ওয়েবসাইট কনফিগারেশন আপডেট করা হয়েছে');
-    addToast('ওয়েবসাইট সেটিংস সফলভাবে সংরক্ষিত হয়েছে।', 'success');
+    logAdminAction('Site Settings Updated', 'ওয়েবসাইট কনফিগারেশন ক্লাউডে আপডেট করা হয়েছে');
+    addToast('ওয়েবসাইট সেটিংস সফলভাবে ক্লাউডে সংরক্ষিত হয়েছে।', 'success');
+    return true;
   };
 
   // Notices
