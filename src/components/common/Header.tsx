@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
-  const { activeTab, setActiveTab, unreadNotifCount } = useApp();
+  const { activeTab, setActiveTab, unreadNotifCount, settings } = useApp();
   const { currentUser, isAdmin } = useAuth();
 
   return (
@@ -23,7 +23,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-sm">
             <GraduationCap className="w-5 h-5" />
           </div>
-          <span className="font-bold text-slate-900 text-lg">Campus Help Zone</span>
+          <span className="font-bold text-slate-900 text-lg">{settings.siteName || 'Campus Help Zone'}</span>
         </button>
 
         {/* Zone 2: 4-5 concise single-line text navigation links (Desktop) */}

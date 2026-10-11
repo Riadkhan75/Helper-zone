@@ -1,5 +1,6 @@
 import { 
   db, 
+  auth,
   isFirebaseConfigured, 
   collection, 
   doc, 
@@ -13,6 +14,53 @@ import {
  * Seamlessly connects Google AI Studio, Vercel deployments,
  * and mobile devices in real time using Firebase Firestore and HTTP fallback.
  */
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth?.currentUser?.uid,
+      email: auth?.currentUser?.email,
+      emailVerified: auth?.currentUser?.emailVerified,
+      isAnonymous: auth?.currentUser?.isAnonymous,
+      tenantId: auth?.currentUser?.tenantId,
+      providerInfo: auth?.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  return errInfo;
+}
 
 export interface SharedServerState {
   settings: any;
@@ -54,8 +102,7 @@ export const getSyncEndpoint = (): string => {
 
 /**
  * Subscribes to real-time changes via Firebase Firestore.
- * When changes happen on Vercel, AI Studio immediately receives them,
- * and vice-versa, in milliseconds without polling.
+ * When changes happen on one device, all other devices receive them instantly.
  */
 export const subscribeToRealtimeSync = (
   onDataChange: (type: string, payload: any) => void
@@ -64,8 +111,9 @@ export const subscribeToRealtimeSync = (
     return () => {};
   }
 
+  const path = 'campus_sync';
   try {
-    const unsub = onSnapshot(collection(db, 'campus_sync'), (snapshot) => {
+    const unsub = onSnapshot(collection(db, path), (snapshot) => {
       snapshot.docChanges().forEach((change) => {
         const id = change.doc.id;
         const data = change.doc.data();
@@ -74,12 +122,12 @@ export const subscribeToRealtimeSync = (
         }
       });
     }, (error) => {
-      console.warn('Firestore realtime sync listener warning:', error);
+      handleFirestoreError(error, OperationType.GET, path);
     });
 
     return unsub;
   } catch (err) {
-    console.warn('Could not establish Firestore realtime subscription:', err);
+    handleFirestoreError(err, OperationType.GET, path);
     return () => {};
   }
 };
@@ -91,8 +139,9 @@ export const subscribeToRealtimeSync = (
 export const fetchSharedServerState = async (): Promise<SharedServerState | null> => {
   // If Firestore is active, fetch from Firestore cloud
   if (isFirebaseConfigured() && db) {
+    const path = 'campus_sync';
     try {
-      const snap = await getDocs(collection(db, 'campus_sync'));
+      const snap = await getDocs(collection(db, path));
       if (!snap.empty) {
         const consolidated: any = {};
         let latestTime = '';
@@ -111,7 +160,7 @@ export const fetchSharedServerState = async (): Promise<SharedServerState | null
         }
       }
     } catch (fsErr) {
-      console.warn('Firestore read error, falling back to HTTP sync bridge:', fsErr);
+      handleFirestoreError(fsErr, OperationType.LIST, path);
     }
   }
 
@@ -163,6 +212,7 @@ export const pushSharedServerUpdate = async (type: string, payload: any): Promis
 
   // 1. Push to Firestore if configured
   if (isFirebaseConfigured() && db) {
+    const docPath = `campus_sync/${type}`;
     try {
       await setDoc(doc(db, 'campus_sync', type), {
         payload,
@@ -170,7 +220,7 @@ export const pushSharedServerUpdate = async (type: string, payload: any): Promis
       }, { merge: true });
       firestoreSuccess = true;
     } catch (fsErr) {
-      console.warn('Firestore write warning:', fsErr);
+      handleFirestoreError(fsErr, OperationType.WRITE, docPath);
     }
   }
 

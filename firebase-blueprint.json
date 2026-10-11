@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile document",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "collegeName": { "type": "string", "maxLength": 150 },
+        "department": { "type": "string", "maxLength": 100 },
+        "academicYear": { "type": "string", "maxLength": 50 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "role": { "type": "string", "enum": ["student", "moderator", "admin"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "displayName", "collegeName", "department", "academicYear", "role"]
+    },
+    "CampusSyncItem": {
+      "title": "CampusSyncItem",
+      "description": "Shared online realtime synchronization payload between all devices and browsers",
+      "type": "object",
+      "properties": {
+        "payload": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["updatedAt"]
+    }
+  },
+  "firestore": {
+    "/campus_sync/{syncKey}": {
+      "schema": "CampusSyncItem",
+      "description": "Stores state collections (settings, notices, posts, comments, studyMaterials, books, lostFoundItems, notifications, reports, activityLogs, users) with real-time push to all devices."
+    },
+    "/admins/{adminUid}": {
+      "schema": "UserProfile",
+      "description": "Verified administrator document allowing admin privilege verification"
+    }
+  }
+}

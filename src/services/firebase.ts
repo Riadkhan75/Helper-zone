@@ -16,6 +16,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
   setDoc,
   updateDoc,
@@ -23,16 +24,21 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import bundledConfig from '../../firebase-applet-config.json';
 
-// Read config from Vite env
+// Configuration priority:
+// 1. Provisioned / injected firebase-applet-config.json
+// 2. Vite environment variables fallback
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: (bundledConfig && bundledConfig.apiKey) || import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: (bundledConfig && bundledConfig.authDomain) || import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: (bundledConfig && bundledConfig.projectId) || import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: (bundledConfig && bundledConfig.storageBucket) || import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: (bundledConfig && bundledConfig.messagingSenderId) || import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: (bundledConfig && bundledConfig.appId) || import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
+const databaseId = (bundledConfig && bundledConfig.firestoreDatabaseId) || undefined;
 
 export const isFirebaseConfigured = (): boolean => {
   return !!(
@@ -51,14 +57,23 @@ if (isFirebaseConfigured()) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     auth = getAuth(app);
-    db = getFirestore(app);
+    // Initialize Firestore using the specific database ID if configured
+    db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
     storage = getStorage(app);
-    console.info('Connected to Firebase successfully.');
+    console.info('Connected to Firebase Firestore & Auth successfully. Database ID:', databaseId || '(default)');
+
+    // Validate connection to Firestore as per skill guideline
+    getDocFromServer(doc(db, 'campus_sync', 'test_connection')).catch((testErr) => {
+      // Non-blocking test
+      if (testErr instanceof Error && testErr.message.includes('the client is offline')) {
+        console.warn('Firebase connection note:', testErr.message);
+      }
+    });
   } catch (err) {
     console.warn('Firebase initialization error, switching to interactive local store:', err);
   }
 } else {
-  console.info('Firebase environment variables not detected. Running Campus Help Zone in active local persistence mode.');
+  console.info('Firebase configuration not detected. Running Campus Help Zone in active local persistence mode.');
 }
 
 export { 
@@ -69,6 +84,7 @@ export {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
   setDoc,
   updateDoc,

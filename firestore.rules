@@ -1,134 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.admin == true ||
-        request.auth.token.email == "nazrulpost75@gmail.com"
-      );
-    }
-
-    // Shared Campus Sync Collection (bi-directional sync between Google AI Studio and Vercel)
-    match /campus_sync/{syncDoc} {
-      allow read, write: if true;
-    }
-
-    // Default deny
+    // Default Deny
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users Collection
-    match /users/{userId} {
-      // Any authenticated user can read profiles for community displays
-      allow read: if isAuthenticated();
-      
-      // User can create their initial profile (cannot assign admin role to themselves)
-      allow create: if isOwner(userId) && 
-        (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role == 'student');
-      
-      // User can update their profile (cannot modify their role or ban status)
-      allow update: if (isOwner(userId) && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isBanned', 'isSuspended']))
-        || isAdmin();
-
-      // Only admin can delete user record
-      allow delete: if isAdmin();
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Community Posts
-    match /posts/{postId} {
-      // Anyone can read active posts
+    // campus_sync documents store shared data collections across devices
+    // Read: Allowed for public/authenticated viewing across all devices
+    // Write: Permitted for synchronized state mutations
+    match /campus_sync/{syncKey} {
+      allow get, list: if true;
+      allow create, update: if isValidId(syncKey) && request.resource.data.updatedAt is string;
+      allow delete: if false;
+    }
+
+    // Admins collection for role verification
+    match /admins/{adminUid} {
       allow read: if true;
-
-      // Authenticated users can create post with their own authorId
-      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
-
-      // Author can update or delete their post; Admin has full moderation rights
-      allow update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || isAdmin();
-    }
-
-    // Post Comments & Replies
-    match /comments/{commentId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if (isAuthenticated() && resource.data.authorId == request.auth.uid) || isAdmin();
-    }
-
-    // Study Materials
-    match /studyMaterials/{materialId} {
-      // Public can read only approved materials; uploader and admin can view pending
-      allow read: if resource.data.isApproved == true || 
-        (isAuthenticated() && (resource.data.uploaderId == request.auth.uid || isAdmin()));
-
-      // Normal student can upload with isApproved: false; admin can auto-approve
-      allow create: if isAuthenticated() && 
-        request.resource.data.uploaderId == request.auth.uid &&
-        (isAdmin() || request.resource.data.isApproved == false);
-
-      // Only admin can approve or reject; author can update title/description while pending
-      allow update: if isAdmin() || (
-        isAuthenticated() && 
-        resource.data.uploaderId == request.auth.uid && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isApproved'])
-      );
-
-      allow delete: if (isAuthenticated() && resource.data.uploaderId == request.auth.uid) || isAdmin();
-    }
-
-    // Book Listings
-    match /bookListings/{bookId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.sellerId == request.auth.uid;
-      allow update, delete: if (isAuthenticated() && resource.data.sellerId == request.auth.uid) || isAdmin();
-    }
-
-    // Lost & Found Items
-    match /lostFoundItems/{itemId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.reporterId == request.auth.uid;
-      allow update, delete: if (isAuthenticated() && resource.data.reporterId == request.auth.uid) || isAdmin();
-    }
-
-    // Notifications
-    match /notifications/{notifId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.userId == 'all' || isAdmin());
-      allow create: if isAdmin() || isAuthenticated();
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-    }
-
-    // Reports Queue
-    match /reports/{reportId} {
-      allow create: if isAuthenticated() && request.resource.data.reporterId == request.auth.uid;
-      allow read, update, delete: if isAdmin();
-    }
-
-    // College Notices & Announcements
-    match /notices/{noticeId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    // Categories & Global Settings
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Admin Activity Audit Logs
-    match /activityLogs/{logId} {
-      allow read, write: if isAdmin();
+      allow write: if false;
     }
   }
 }

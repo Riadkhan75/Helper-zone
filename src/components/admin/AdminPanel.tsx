@@ -117,6 +117,16 @@ export const AdminPanel: React.FC = () => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(settings.isMaintenanceMode);
   const [maxFileUploadMb, setMaxFileUploadMb] = useState(settings.maxFileUploadMb);
 
+  // Sync form inputs when remote Firestore/server state updates
+  React.useEffect(() => {
+    setSiteName(settings.siteName);
+    setSiteDescription(settings.siteDescription);
+    setBannerNotice(settings.bannerNotice);
+    setIsNoticeActive(settings.isNoticeActive);
+    setIsMaintenanceMode(settings.isMaintenanceMode);
+    setMaxFileUploadMb(settings.maxFileUploadMb);
+  }, [settings]);
+
   // Security guard: If user is not admin, show Access Denied
   if (!isAdmin) {
     return (

@@ -41,7 +41,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
     studyMaterials, 
     books, 
     lostFoundItems,
-    toggleLikePost
+    toggleLikePost,
+    settings
   } = useApp();
   const { currentUser } = useAuth();
 
@@ -96,7 +97,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
-            নোট ও সাজেশন সংগ্রহ করুন, পুরোনো বই সাশ্রয়ী মূল্যে বিনিময় করুন এবং ক্যাম্পাসে হারানো যেকোনো জিনিস সহজে খুঁজে নিন।
+            {settings.siteDescription || 'নোট ও সাজেশন সংগ্রহ করুন, পুরোনো বই সাশ্রয়ী মূল্যে বিনিময় করুন এবং ক্যাম্পাসে হারানো যেকোনো জিনিস সহজে খুঁজে নিন।'}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-1">
