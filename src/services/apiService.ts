@@ -76,6 +76,13 @@ export interface SharedServerState {
   reports: any[];
   activityLogs: any[];
   users: any[];
+  verifications?: any[];
+  chatConversations?: any[];
+  chatMessages?: Record<string, any[]>;
+  routines?: any[];
+  exams?: any[];
+  bookmarks?: any;
+  cgpa?: any[];
   updatedAt: string;
 }
 
@@ -102,37 +109,99 @@ export const getSyncEndpoint = (): string => {
   return '/api/sync';
 };
 
+// Universal Multi-Device Local Broadcast Channel
+const localSyncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('campus_sync_bus') : null;
+
 /**
- * Subscribes to real-time changes via Firebase Firestore.
- * When changes happen on one device, all other devices receive them instantly.
+ * Subscribes to real-time changes across all tabs, windows, and devices.
+ * Uses a triple-tier sync architecture:
+ * 1. BroadcastChannel (0ms instant cross-tab sync in same browser)
+ * 2. Server-Sent Events (SSE) (50ms instant cross-device sync via Express server)
+ * 3. Firebase Firestore cloud onSnapshot (worldwide cross-cloud sync)
  */
 export const subscribeToRealtimeSync = (
   onDataChange: (type: string, payload: any) => void
 ): (() => void) => {
-  if (!isFirebaseConfigured() || !db) {
-    return () => {};
-  }
+  const cleanups: (() => void)[] = [];
 
-  const path = 'campus_sync';
-  try {
-    const unsub = onSnapshot(collection(db, path), (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'removed') return;
-        const id = change.doc.id;
-        const data = change.doc.data();
-        if (data && data.payload !== undefined) {
-          onDataChange(id, data.payload);
-        }
-      });
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, path);
+  // Tier 1: Local Browser BroadcastChannel (Instant 0ms sync between open tabs)
+  if (localSyncChannel) {
+    const handleLocalMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type && event.data.payload !== undefined) {
+        onDataChange(event.data.type, event.data.payload);
+      }
+    };
+    localSyncChannel.addEventListener('message', handleLocalMessage);
+    cleanups.push(() => {
+      localSyncChannel.removeEventListener('message', handleLocalMessage);
     });
-
-    return unsub;
-  } catch (err) {
-    handleFirestoreError(err, OperationType.GET, path);
-    return () => {};
   }
+
+  // Tier 2: Server-Sent Events (SSE) stream from Express server
+  if (typeof EventSource !== 'undefined') {
+    try {
+      const sse = new EventSource('/api/sync/events');
+      sse.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed.type === 'init' && parsed.data && typeof parsed.data === 'object') {
+            Object.keys(parsed.data).forEach((key) => {
+              if (key !== 'updatedAt') {
+                onDataChange(key, parsed.data[key]);
+              }
+            });
+          } else if (parsed.type && parsed.payload !== undefined) {
+            onDataChange(parsed.type, parsed.payload);
+          }
+        } catch {
+          // Ignore parse errors on keepalive comments
+        }
+      };
+
+      sse.onerror = () => {
+        // EventSource automatically retries connection
+      };
+
+      cleanups.push(() => {
+        sse.close();
+      });
+    } catch (e) {
+      console.warn('SSE initialization note:', e);
+    }
+  }
+
+  // Tier 3: Firebase Firestore cloud real-time snapshot
+  if (isFirebaseConfigured() && db) {
+    const path = 'campus_sync';
+    try {
+      const unsub = onSnapshot(collection(db, path), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'removed') return;
+          const id = change.doc.id;
+          const data = change.doc.data();
+          if (data && data.payload !== undefined) {
+            onDataChange(id, data.payload);
+          }
+        });
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, path);
+      });
+
+      cleanups.push(unsub);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, path);
+    }
+  }
+
+  return () => {
+    cleanups.forEach((fn) => {
+      try {
+        fn();
+      } catch {
+        /* ignore */
+      }
+    });
+  };
 };
 
 /**
@@ -195,7 +264,7 @@ export const fetchSharedServerState = async (): Promise<SharedServerState | null
           if (directJson.success && directJson.data) return directJson.data;
         }
       }
-    } catch (directErr) {
+    } catch {
       /* ignore */
     }
     return null;
@@ -203,15 +272,26 @@ export const fetchSharedServerState = async (): Promise<SharedServerState | null
 };
 
 /**
- * Pushes updates to both Firebase Firestore and the HTTP sync server.
- * Guarantees that updates made on either Vercel or Google AI Studio
- * are persisted and broadcasted across both platforms.
+ * Pushes updates to all sync channels:
+ * 1. BroadcastChannel (0ms for all tabs in same browser)
+ * 2. HTTP sync endpoint (Express server broadcasts via SSE to all active devices in 50ms)
+ * 3. Firebase Firestore cloud document (persists in cloud)
  */
 export const pushSharedServerUpdate = async (type: string, payload: any): Promise<boolean> => {
   const timestamp = new Date().toISOString();
+
+  // 1. Instant 0ms broadcast to all other open tabs in the same browser
+  if (localSyncChannel) {
+    try {
+      localSyncChannel.postMessage({ type, payload, timestamp });
+    } catch {
+      /* ignore */
+    }
+  }
+
   let firestoreSuccess = false;
 
-  // 1. Push to Firestore if configured
+  // 2. Push to Firestore if configured
   if (isFirebaseConfigured() && db) {
     const docPath = `campus_sync/${type}`;
     try {
@@ -225,7 +305,7 @@ export const pushSharedServerUpdate = async (type: string, payload: any): Promis
     }
   }
 
-  // 2. Push to HTTP Sync endpoint
+  // 3. Push to HTTP Sync endpoint (triggers server SSE broadcast to all other devices)
   let httpSuccess = false;
   const endpoint = getSyncEndpoint();
 
@@ -253,7 +333,7 @@ export const pushSharedServerUpdate = async (type: string, payload: any): Promis
           body: JSON.stringify({ type, payload }),
         });
       }
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }

@@ -21,6 +21,18 @@ import {
   Upload
 } from 'lucide-react';
 import { compressImageFile } from '../../utils/imageUtils';
+import { VerifiedBadge } from '../common/VerifiedBadge';
+import { IdVerificationModal } from './IdVerificationModal';
+import { 
+  Trophy, 
+  Calculator, 
+  Bookmark, 
+  Sun, 
+  Moon, 
+  AlertCircle,
+  FileCheck,
+  MessageSquare
+} from 'lucide-react';
 
 interface ProfileViewProps {
   onOpenEditProfile: () => void;
@@ -35,12 +47,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
     books, 
     lostFoundItems, 
     setActiveTab, 
-    addToast 
+    addToast,
+    isDarkMode,
+    toggleDarkMode
   } = useApp();
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [activeSubTab, setActiveSubTab] = useState<'posts' | 'study' | 'books' | 'lostfound'>('posts');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
 
   if (!currentUser) {
     return (
@@ -139,27 +154,30 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100">
                   {currentUser.displayName}
                 </h1>
+                {currentUser.verificationStatus === 'verified' && (
+                  <VerifiedBadge size="sm" showLabel />
+                )}
                 {isAdmin ? (
-                  <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-purple-700 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
                     প্রধান এডমিন
                   </span>
                 ) : (
-                  <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 px-2.5 py-0.5 rounded-full">
                     শিক্ষার্থী
                   </span>
                 )}
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-500 flex items-center gap-1.5">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <School className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>{currentUser.collegeName}</span>
               </p>
 
-              <div className="flex items-center gap-3 text-xs text-slate-500 pt-0.5">
+              <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pt-0.5">
                 <span className="flex items-center gap-1">
                   <BookOpen className="w-3.5 h-3.5 text-slate-400" />
                   {currentUser.department}
@@ -176,7 +194,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
                 type="button"
                 onClick={() => galleryInputRef.current?.click()}
                 disabled={isUploadingPhoto}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 pt-0.5 cursor-pointer disabled:opacity-50"
+                className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 hover:underline flex items-center gap-1 pt-0.5 cursor-pointer disabled:opacity-50"
               >
                 <Camera className="w-3.5 h-3.5" />
                 <span>
@@ -195,7 +213,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
               type="button"
               onClick={() => galleryInputRef.current?.click()}
               disabled={isUploadingPhoto}
-              className="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-indigo-100 disabled:opacity-50"
+              className="flex-1 sm:flex-initial px-3.5 py-2 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-indigo-100 dark:border-indigo-900 disabled:opacity-50"
             >
               <Upload className="w-3.5 h-3.5" />
               <span>গ্যালারি থেকে ফটো</span>
@@ -203,7 +221,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
 
             <button
               onClick={onOpenEditProfile}
-              className="flex-1 sm:flex-initial px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>প্রোফাইল পরিবর্তন</span>
@@ -221,7 +239,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
 
             <button
               onClick={logout}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
               title="লগআউট"
             >
               <LogOut className="w-4 h-4" />
@@ -232,18 +250,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
         {/* Bio & Details */}
         <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
-            <h4 className="font-semibold text-slate-700 mb-1">পরিচিতি (Bio):</h4>
-            <p className="text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <h4 className="font-semibold text-slate-700 dark:text-slate-300 mb-1">পরিচিতি (Bio):</h4>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               {currentUser.bio || 'এখনো কোনো পরিচিতি যুক্ত করা হয়নি।'}
             </p>
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-semibold text-slate-700">যোগাযোগ ও প্রাইভেসি:</h4>
-            <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5">
-              <p className="text-slate-600">ইমেইল: <strong className="text-slate-800">{currentUser.email}</strong></p>
-              <p className="text-slate-600 flex items-center justify-between">
-                <span>ফোন নম্বর: <strong className="text-slate-800">{currentUser.phoneNumber || 'যুক্ত নেই'}</strong></span>
+            <h4 className="font-semibold text-slate-700 dark:text-slate-300">যোগাযোগ ও প্রাইভেসি:</h4>
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl space-y-1.5">
+              <p className="text-slate-600 dark:text-slate-300">ইমেইল: <strong className="text-slate-800 dark:text-slate-100">{currentUser.email}</strong></p>
+              <p className="text-slate-600 dark:text-slate-300 flex items-center justify-between">
+                <span>ফোন নম্বর: <strong className="text-slate-800 dark:text-slate-100">{currentUser.phoneNumber || 'যুক্ত নেই'}</strong></span>
                 <span className="text-[10px] text-slate-400 flex items-center gap-1">
                   {currentUser.showPhonePublicly ? <Eye className="w-3 h-3 text-indigo-600" /> : <EyeOff className="w-3 h-3 text-slate-400" />}
                   {currentUser.showPhonePublicly ? 'পাবলিক' : 'গোপন'}
@@ -252,6 +270,125 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
             </div>
           </div>
         </div>
+      </div>
+
+      {/* STUDENT ID VERIFICATION STATUS CARD */}
+      <div className={`p-6 rounded-3xl border shadow-xs transition-colors ${
+        currentUser.verificationStatus === 'verified'
+          ? 'bg-blue-50/60 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900'
+          : currentUser.verificationStatus === 'pending'
+          ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900'
+          : currentUser.verificationStatus === 'rejected'
+          ? 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900'
+          : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800'
+      }`}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+              currentUser.verificationStatus === 'verified'
+                ? 'bg-blue-600 text-white'
+                : currentUser.verificationStatus === 'pending'
+                ? 'bg-amber-500 text-white'
+                : currentUser.verificationStatus === 'rejected'
+                ? 'bg-rose-500 text-white'
+                : 'bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400'
+            }`}>
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                  {currentUser.verificationStatus === 'verified'
+                    ? 'স্টুডেন্ট আইডি ভেরিফাইড'
+                    : currentUser.verificationStatus === 'pending'
+                    ? 'ভেরিফিকেশন বিবেচনাধীন (Pending)'
+                    : currentUser.verificationStatus === 'rejected'
+                    ? 'ভেরিফিকেশন প্রত্যাখ্যাত'
+                    : 'স্টুডেন্ট আইডি ভেরিফাই করুন'}
+                </h3>
+                {currentUser.verificationStatus === 'verified' && <VerifiedBadge size="sm" />}
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                {currentUser.verificationStatus === 'verified'
+                  ? `আপনার আইডি সফলভাবে ভেরিফাইড (আইডি নং: ${currentUser.studentIdNumber || 'স্বীকৃত'})। আপনার নামে ব্লু-টিক ব্যাজ প্রদর্শিত হচ্ছে।`
+                  : currentUser.verificationStatus === 'pending'
+                  ? 'আপনার কলেজ আইডি কার্ডটি এডমিন পর্যালোচনায় রয়েছে। খুব শীঘ্রই ব্লু-টিক প্রদান করা হবে।'
+                  : currentUser.verificationStatus === 'rejected'
+                  ? `পূর্বের আবেদন গৃহীত হয়নি: ${currentUser.verificationRejectionReason || 'তথ্য অস্পষ্টতা'}। পুনরায় আবেদন করুন।`
+                  : 'কলেজ আইডি কার্ড সাবমিট করে আপনার প্রোফাইলে অফিসিয়াল ব্লু-টিক ভেরিফাইড ব্যাজ গ্রহণ করুন।'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setVerificationModalOpen(true)}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all ${
+              currentUser.verificationStatus === 'verified'
+                ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 hover:bg-blue-200'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+            }`}
+          >
+            <FileCheck className="w-4 h-4" />
+            <span>
+              {currentUser.verificationStatus === 'verified'
+                ? 'আইডি তথ্য দেখুন'
+                : currentUser.verificationStatus === 'pending'
+                ? 'আবেদন আপডেট'
+                : 'আইডি কার্ড সাবমিট করুন'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* QUICK ACADEMIC & COMMUNITY TOOLS ROW */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          onClick={() => setActiveTab('academic')}
+          className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all text-left group shadow-xs cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            <Calculator className="w-5 h-5" />
+          </div>
+          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">CGPA ও রুটিন</h4>
+          <p className="text-[11px] text-slate-400 mt-0.5">অ্যাকাডেমিক টুলস</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('leaderboard')}
+          className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left group shadow-xs cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            <Trophy className="w-5 h-5" />
+          </div>
+          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">লিডারবোর্ড</h4>
+          <p className="text-[11px] text-slate-400 mt-0.5">র‍্যাঙ্কিং ও পয়েন্ট</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('chat')}
+          className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all text-left group shadow-xs cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">ইন-অ্যাপ চ্যাট</h4>
+          <p className="text-[11px] text-slate-400 mt-0.5">মেসেজিং ও গ্রুপ</p>
+        </button>
+
+        <button
+          onClick={toggleDarkMode}
+          className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 transition-all text-left group shadow-xs cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+            {isDarkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
+          </div>
+          <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+            {isDarkMode ? 'লাইট মোড' : 'ডার্ক মোড'}
+          </h4>
+          <p className="text-[11px] text-slate-400 mt-0.5">থিম পরিবর্তন</p>
+        </button>
       </div>
 
       {/* User Contributions Tabs */}
@@ -365,12 +502,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
                 <p className="text-xs text-slate-400 py-6 text-center">কোনো হারানো বা প্রাপ্তি বিজ্ঞপ্তি নেই।</p>
               ) : (
                 myLostFound.map(lf => (
-                  <div key={lf.id} className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
+                  <div key={lf.id} className="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm">{lf.title}</h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{lf.location}</p>
+                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">{lf.title}</h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{lf.location}</p>
                     </div>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
                       {lf.type === 'lost' ? 'হারানো' : 'প্রাপ্ত'}
                     </span>
                   </div>
@@ -380,6 +517,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onOpenEditProfile, onO
           )}
         </div>
       </div>
+
+      {/* Student ID Verification Modal */}
+      <IdVerificationModal
+        isOpen={verificationModalOpen}
+        onClose={() => setVerificationModalOpen(false)}
+      />
     </div>
   );
 };

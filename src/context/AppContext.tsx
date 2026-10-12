@@ -9,7 +9,15 @@ import {
   ReportItem, 
   SiteSettings, 
   ActivityLog,
-  PostComment
+  PostComment,
+  VerificationRequest,
+  SavedBookmarks,
+  ClassRoutineSlot,
+  ExamCountdownItem,
+  SavedCGPARecord,
+  ChatMessage,
+  ChatConversation,
+  CampusGroupRoom
 } from '../types';
 import { 
   INITIAL_POSTS, 
@@ -21,7 +29,14 @@ import {
   INITIAL_REPORTS, 
   INITIAL_SETTINGS, 
   INITIAL_LOGS,
-  INITIAL_COMMENTS
+  INITIAL_COMMENTS,
+  INITIAL_VERIFICATION_REQUESTS,
+  INITIAL_CAMPUS_GROUPS,
+  INITIAL_CHAT_CONVERSATIONS,
+  INITIAL_CHAT_MESSAGES,
+  INITIAL_CLASS_ROUTINE,
+  INITIAL_EXAMS,
+  INITIAL_BOOKMARKS
 } from '../services/seedData';
 import { 
   fetchSharedServerState, 
@@ -31,7 +46,18 @@ import {
 } from '../services/apiService';
 import { useAuth } from './AuthContext';
 
-export type ActiveTab = 'home' | 'study' | 'books' | 'lostfound' | 'community' | 'notifications' | 'profile' | 'admin';
+export type ActiveTab = 
+  | 'home' 
+  | 'study' 
+  | 'books' 
+  | 'lostfound' 
+  | 'community' 
+  | 'notifications' 
+  | 'profile' 
+  | 'admin'
+  | 'academic'
+  | 'leaderboard'
+  | 'chat';
 
 export interface ToastMessage {
   id: string;
@@ -102,15 +128,69 @@ interface AppContextType {
   // Activity Logs
   activityLogs: ActivityLog[];
   logAdminAction: (action: string, details: string) => void;
+
+  // Dark Mode
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+
+  // Student ID Verification
+  verificationRequests: VerificationRequest[];
+  submitVerificationRequest: (req: { studentIdNumber: string; idCardImageUrl: string }) => Promise<boolean>;
+  reviewVerificationRequest: (requestId: string, status: 'verified' | 'rejected', rejectionReason?: string) => Promise<boolean>;
+
+  // Bookmarks & Saved Items
+  savedBookmarks: SavedBookmarks;
+  toggleBookmark: (type: 'material' | 'post' | 'book', id: string) => void;
+  isBookmarked: (type: 'material' | 'post' | 'book', id: string) => boolean;
+
+  // Academic Tools (Routine, Exams, CGPA)
+  routineSlots: ClassRoutineSlot[];
+  addRoutineSlot: (slot: Omit<ClassRoutineSlot, 'id'>) => void;
+  deleteRoutineSlot: (id: string) => void;
+  exams: ExamCountdownItem[];
+  addExam: (exam: Omit<ExamCountdownItem, 'id' | 'createdAt'>) => void;
+  deleteExam: (id: string) => void;
+  toggleSyllabusTopic: (examId: string, topicId: string) => void;
+  savedCGPARecords: SavedCGPARecord[];
+  saveCGPARecord: (record: Omit<SavedCGPARecord, 'id' | 'updatedAt'>) => void;
+  deleteCGPARecord: (id: string) => void;
+
+  // Chat & Messaging
+  chatConversations: ChatConversation[];
+  chatMessages: Record<string, ChatMessage[]>;
+  campusGroups: CampusGroupRoom[];
+  activeChatId: string | null;
+  setActiveChatId: (id: string | null) => void;
+  openDirectChatWithUser: (targetUser: { uid: string; displayName: string; photoURL?: string; collegeName?: string; department?: string; isVerified?: boolean }, contextItem?: ChatConversation['contextItem']) => void;
+  sendMessage: (conversationId: string, content: string, contextItem?: ChatMessage['contextItem']) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, updateUserStatus, usersList } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Dark Mode
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('chz_theme');
+    if (saved) return saved === 'dark';
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('chz_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('chz_theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
   // Persistent States initialized from localStorage or seed fallback
   const [settings, setSettings] = useState<SiteSettings>(() => {
@@ -169,101 +249,175 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_LOGS;
   });
 
+  // Student ID Verification Requests
+  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>(() => {
+    const saved = localStorage.getItem('chz_verifications');
+    return saved ? JSON.parse(saved) : INITIAL_VERIFICATION_REQUESTS;
+  });
+
+  // Bookmarks
+  const [savedBookmarks, setSavedBookmarks] = useState<SavedBookmarks>(() => {
+    const saved = localStorage.getItem('chz_bookmarks');
+    return saved ? JSON.parse(saved) : INITIAL_BOOKMARKS;
+  });
+
+  // Routine & Exam Countdown Tracker
+  const [routineSlots, setRoutineSlots] = useState<ClassRoutineSlot[]>(() => {
+    const saved = localStorage.getItem('chz_routines');
+    return saved ? JSON.parse(saved) : INITIAL_CLASS_ROUTINE;
+  });
+
+  const [exams, setExams] = useState<ExamCountdownItem[]>(() => {
+    const saved = localStorage.getItem('chz_exams');
+    return saved ? JSON.parse(saved) : INITIAL_EXAMS;
+  });
+
+  const [savedCGPARecords, setSavedCGPARecords] = useState<SavedCGPARecord[]>(() => {
+    const saved = localStorage.getItem('chz_cgpa');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Direct & Campus Group Chat
+  const [campusGroups] = useState<CampusGroupRoom[]>(INITIAL_CAMPUS_GROUPS);
+  const [chatConversations, setChatConversations] = useState<ChatConversation[]>(() => {
+    const saved = localStorage.getItem('chz_chat_convos');
+    return saved ? JSON.parse(saved) : INITIAL_CHAT_CONVERSATIONS;
+  });
+
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(() => {
+    const saved = localStorage.getItem('chz_chat_msgs');
+    if (saved) return JSON.parse(saved);
+    const initialMap: Record<string, ChatMessage[]> = {};
+    INITIAL_CHAT_MESSAGES.forEach(m => {
+      if (!initialMap[m.conversationId]) initialMap[m.conversationId] = [];
+      initialMap[m.conversationId].push(m);
+    });
+    return initialMap;
+  });
+
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
   // Track server version to avoid overwriting and prevent redundant state sets
   const lastServerTimestampRef = useRef<string>('');
   const isInitialLoadDoneRef = useRef<boolean>(false);
 
-  // Background Live Sync: Real-time Firestore push notifications + HTTP periodic sync
+  // Cross-Tab Instant Sync via Window Storage Events
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.newValue) return;
+      try {
+        const val = JSON.parse(e.newValue);
+        if (e.key === 'chz_posts' && Array.isArray(val)) setPosts(val);
+        else if (e.key === 'chz_notices' && Array.isArray(val)) setNotices(val);
+        else if (e.key === 'chz_books' && Array.isArray(val)) setBooks(val);
+        else if (e.key === 'chz_study' && Array.isArray(val)) setStudyMaterials(val);
+        else if (e.key === 'chz_lostfound' && Array.isArray(val)) setLostFoundItems(val);
+        else if (e.key === 'chz_settings' && typeof val === 'object') setSettings(val);
+        else if (e.key === 'chz_comments' && typeof val === 'object') setComments(val);
+        else if (e.key === 'chz_notifs' && Array.isArray(val)) setNotifications(val);
+        else if (e.key === 'chz_verifications' && Array.isArray(val)) setVerificationRequests(val);
+        else if (e.key === 'chz_chat_convos' && Array.isArray(val)) setChatConversations(val);
+        else if (e.key === 'chz_chat_msgs' && typeof val === 'object') setChatMessages(val);
+        else if (e.key === 'chz_routines' && Array.isArray(val)) setRoutineSlots(val);
+        else if (e.key === 'chz_exams' && Array.isArray(val)) setExams(val);
+        else if (e.key === 'chz_bookmarks' && typeof val === 'object') setSavedBookmarks(val);
+        else if (e.key === 'chz_cgpa' && Array.isArray(val)) setSavedCGPARecords(val);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Multi-tier Auto Live Sync: BroadcastChannel + Server-Sent Events (SSE) + Firestore + Active Polling
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Subscribe to Real-time cloud sync (instant sub-second updates across Vercel & AI Studio)
-    const unsubscribeRealtime = subscribeToRealtimeSync((type, payload) => {
-      if (!isMounted || !payload) return;
+    // Helper: Only mutate React state and localStorage if data has genuinely changed
+    // This stops infinite loops, unwanted auto-changes, and continuous re-renders
+    const applyIfChanged = (key: string, payload: any, setter: (val: any) => void) => {
+      if (!isMounted || payload === undefined) return;
+      try {
+        const serialized = JSON.stringify(payload);
+        const existing = localStorage.getItem(key);
+        if (existing !== serialized) {
+          setter(payload);
+          localStorage.setItem(key, serialized);
+        }
+      } catch {
+        setter(payload);
+      }
+    };
 
-      if (type === 'settings') {
-        setSettings(payload);
-        localStorage.setItem('chz_settings', JSON.stringify(payload));
+    // 1. Subscribe to Real-time cloud & local sync (instant sub-second updates across all tabs & devices)
+    const unsubscribeRealtime = subscribeToRealtimeSync((type, payload) => {
+      if (!isMounted || payload === undefined) return;
+
+      if (type === 'settings' && typeof payload === 'object') {
+        applyIfChanged('chz_settings', payload, setSettings);
       } else if (type === 'notices' && Array.isArray(payload)) {
-        setNotices(payload);
-        localStorage.setItem('chz_notices', JSON.stringify(payload));
+        applyIfChanged('chz_notices', payload, setNotices);
       } else if (type === 'posts' && Array.isArray(payload)) {
-        setPosts(payload);
-        localStorage.setItem('chz_posts', JSON.stringify(payload));
+        applyIfChanged('chz_posts', payload, setPosts);
       } else if (type === 'comments' && typeof payload === 'object') {
-        setComments(payload);
-        localStorage.setItem('chz_comments', JSON.stringify(payload));
+        applyIfChanged('chz_comments', payload, setComments);
       } else if (type === 'studyMaterials' && Array.isArray(payload)) {
-        setStudyMaterials(payload);
-        localStorage.setItem('chz_study', JSON.stringify(payload));
+        applyIfChanged('chz_study', payload, setStudyMaterials);
       } else if (type === 'books' && Array.isArray(payload)) {
-        setBooks(payload);
-        localStorage.setItem('chz_books', JSON.stringify(payload));
+        applyIfChanged('chz_books', payload, setBooks);
       } else if (type === 'lostFoundItems' && Array.isArray(payload)) {
-        setLostFoundItems(payload);
-        localStorage.setItem('chz_lostfound', JSON.stringify(payload));
+        applyIfChanged('chz_lostfound', payload, setLostFoundItems);
       } else if (type === 'notifications' && Array.isArray(payload)) {
-        setNotifications(payload);
-        localStorage.setItem('chz_notifs', JSON.stringify(payload));
+        applyIfChanged('chz_notifs', payload, setNotifications);
       } else if (type === 'reports' && Array.isArray(payload)) {
-        setReports(payload);
-        localStorage.setItem('chz_reports', JSON.stringify(payload));
+        applyIfChanged('chz_reports', payload, setReports);
       } else if (type === 'activityLogs' && Array.isArray(payload)) {
-        setActivityLogs(payload);
-        localStorage.setItem('chz_logs', JSON.stringify(payload));
+        applyIfChanged('chz_logs', payload, setActivityLogs);
+      } else if (type === 'verifications' && Array.isArray(payload)) {
+        applyIfChanged('chz_verifications', payload, setVerificationRequests);
+      } else if (type === 'chatConversations' && Array.isArray(payload)) {
+        applyIfChanged('chz_chat_convos', payload, setChatConversations);
+      } else if (type === 'chatMessages' && typeof payload === 'object') {
+        applyIfChanged('chz_chat_msgs', payload, setChatMessages);
+      } else if (type === 'routines' && Array.isArray(payload)) {
+        applyIfChanged('chz_routines', payload, setRoutineSlots);
+      } else if (type === 'exams' && Array.isArray(payload)) {
+        applyIfChanged('chz_exams', payload, setExams);
+      } else if (type === 'bookmarks' && typeof payload === 'object') {
+        applyIfChanged('chz_bookmarks', payload, setSavedBookmarks);
+      } else if (type === 'cgpa' && Array.isArray(payload)) {
+        applyIfChanged('chz_cgpa', payload, setSavedCGPARecords);
       }
     });
 
-    // 2. HTTP Sync Bridge: fetches initial consolidated state & fallback
+    // 2. HTTP Sync Bridge: fetches initial consolidated state once on mount & on window focus
     const syncFromServer = async () => {
       const serverState = await fetchSharedServerState();
       if (!serverState || !isMounted) return;
 
       const serverTimestamp = serverState.updatedAt || '';
-      // Only apply if initial load or new server updates are present
       if (!isInitialLoadDoneRef.current || (serverTimestamp && serverTimestamp !== lastServerTimestampRef.current)) {
         lastServerTimestampRef.current = serverTimestamp;
 
-        if (serverState.settings) {
-          setSettings(serverState.settings);
-          localStorage.setItem('chz_settings', JSON.stringify(serverState.settings));
-        }
-        if (Array.isArray(serverState.notices)) {
-          setNotices(serverState.notices);
-          localStorage.setItem('chz_notices', JSON.stringify(serverState.notices));
-        }
-        if (Array.isArray(serverState.posts)) {
-          setPosts(serverState.posts);
-          localStorage.setItem('chz_posts', JSON.stringify(serverState.posts));
-        }
-        if (serverState.comments && typeof serverState.comments === 'object') {
-          setComments(serverState.comments);
-          localStorage.setItem('chz_comments', JSON.stringify(serverState.comments));
-        }
-        if (Array.isArray(serverState.studyMaterials)) {
-          setStudyMaterials(serverState.studyMaterials);
-          localStorage.setItem('chz_study', JSON.stringify(serverState.studyMaterials));
-        }
-        if (Array.isArray(serverState.books)) {
-          setBooks(serverState.books);
-          localStorage.setItem('chz_books', JSON.stringify(serverState.books));
-        }
-        if (Array.isArray(serverState.lostFoundItems)) {
-          setLostFoundItems(serverState.lostFoundItems);
-          localStorage.setItem('chz_lostfound', JSON.stringify(serverState.lostFoundItems));
-        }
-        if (Array.isArray(serverState.notifications)) {
-          setNotifications(serverState.notifications);
-          localStorage.setItem('chz_notifs', JSON.stringify(serverState.notifications));
-        }
-        if (Array.isArray(serverState.reports)) {
-          setReports(serverState.reports);
-          localStorage.setItem('chz_reports', JSON.stringify(serverState.reports));
-        }
-        if (Array.isArray(serverState.activityLogs)) {
-          setActivityLogs(serverState.activityLogs);
-          localStorage.setItem('chz_logs', JSON.stringify(serverState.activityLogs));
-        }
+        if (serverState.settings) applyIfChanged('chz_settings', serverState.settings, setSettings);
+        if (Array.isArray(serverState.notices)) applyIfChanged('chz_notices', serverState.notices, setNotices);
+        if (Array.isArray(serverState.posts)) applyIfChanged('chz_posts', serverState.posts, setPosts);
+        if (serverState.comments && typeof serverState.comments === 'object') applyIfChanged('chz_comments', serverState.comments, setComments);
+        if (Array.isArray(serverState.studyMaterials)) applyIfChanged('chz_study', serverState.studyMaterials, setStudyMaterials);
+        if (Array.isArray(serverState.books)) applyIfChanged('chz_books', serverState.books, setBooks);
+        if (Array.isArray(serverState.lostFoundItems)) applyIfChanged('chz_lostfound', serverState.lostFoundItems, setLostFoundItems);
+        if (Array.isArray(serverState.notifications)) applyIfChanged('chz_notifs', serverState.notifications, setNotifications);
+        if (Array.isArray(serverState.reports)) applyIfChanged('chz_reports', serverState.reports, setReports);
+        if (Array.isArray(serverState.activityLogs)) applyIfChanged('chz_logs', serverState.activityLogs, setActivityLogs);
+        if (Array.isArray((serverState as any).verifications)) applyIfChanged('chz_verifications', (serverState as any).verifications, setVerificationRequests);
+        if (Array.isArray((serverState as any).chatConversations)) applyIfChanged('chz_chat_convos', (serverState as any).chatConversations, setChatConversations);
+        if ((serverState as any).chatMessages && typeof (serverState as any).chatMessages === 'object') applyIfChanged('chz_chat_msgs', (serverState as any).chatMessages, setChatMessages);
+        if (Array.isArray((serverState as any).routines)) applyIfChanged('chz_routines', (serverState as any).routines, setRoutineSlots);
+        if (Array.isArray((serverState as any).exams)) applyIfChanged('chz_exams', (serverState as any).exams, setExams);
+        if ((serverState as any).bookmarks && typeof (serverState as any).bookmarks === 'object') applyIfChanged('chz_bookmarks', (serverState as any).bookmarks, setSavedBookmarks);
+        if (Array.isArray((serverState as any).cgpa)) applyIfChanged('chz_cgpa', (serverState as any).cgpa, setSavedCGPARecords);
 
         isInitialLoadDoneRef.current = true;
       }
@@ -272,17 +426,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Initial load
     syncFromServer();
 
-    // Only poll HTTP endpoint if Firebase real-time sync is not available
-    let interval: any = null;
-    if (!isFirebaseConfigured()) {
-      interval = setInterval(syncFromServer, 4000);
-    }
+    // Gentle window focus refresh when tab becomes active
     window.addEventListener('focus', syncFromServer);
 
     return () => {
       isMounted = false;
       unsubscribeRealtime();
-      if (interval) clearInterval(interval);
       window.removeEventListener('focus', syncFromServer);
     };
   }, []);
@@ -783,6 +932,305 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`রিপোর্ট সফলভাবে ${resolution === 'resolved' ? 'নিষ্পত্তি' : 'খারিজ'} করা হয়েছে।`, 'info');
   };
 
+  // Student ID Verification submission
+  const submitVerificationRequest = async (req: { studentIdNumber: string; idCardImageUrl: string }): Promise<boolean> => {
+    if (!currentUser) {
+      addToast('ভেরিফিকেশন সাবমিট করতে লগইন আবশ্যক।', 'error');
+      return false;
+    }
+    const newReq: VerificationRequest = {
+      id: 'verif_' + Date.now(),
+      userId: currentUser.uid,
+      userName: currentUser.displayName,
+      userEmail: currentUser.email,
+      userCollege: currentUser.collegeName,
+      userDepartment: currentUser.department,
+      academicYear: currentUser.academicYear,
+      studentIdNumber: req.studentIdNumber.trim(),
+      idCardImageUrl: req.idCardImageUrl,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+    };
+
+    const updated = [newReq, ...verificationRequests.filter(r => r.userId !== currentUser.uid)];
+    setVerificationRequests(updated);
+    localStorage.setItem('chz_verifications', JSON.stringify(updated));
+    pushSharedServerUpdate('verifications', updated);
+
+    // Update current user profile status to pending
+    updateUserStatus(currentUser.uid, {
+      verificationStatus: 'pending',
+      studentIdNumber: req.studentIdNumber.trim(),
+      idCardImageUrl: req.idCardImageUrl,
+      verificationSubmittedAt: new Date().toISOString(),
+    });
+
+    addToast('আপনার স্টুডেন্ট আইডি সাবমিট সম্পন্ন হয়েছে! এডমিন রিভিউ শেষে ব্লু-টিক প্রদান করা হবে।', 'success');
+    return true;
+  };
+
+  // Review Verification Request (Admin)
+  const reviewVerificationRequest = async (requestId: string, status: 'verified' | 'rejected', rejectionReason?: string): Promise<boolean> => {
+    const target = verificationRequests.find(r => r.id === requestId);
+    if (!target) return false;
+
+    const updated = verificationRequests.map(r => {
+      if (r.id === requestId) {
+        return {
+          ...r,
+          status,
+          rejectionReason: status === 'rejected' ? rejectionReason : undefined,
+          reviewedAt: new Date().toISOString(),
+        };
+      }
+      return r;
+    });
+
+    setVerificationRequests(updated);
+    localStorage.setItem('chz_verifications', JSON.stringify(updated));
+    pushSharedServerUpdate('verifications', updated);
+
+    // Update target user
+    updateUserStatus(target.userId, {
+      verificationStatus: status,
+      verificationReviewedAt: new Date().toISOString(),
+      verificationRejectionReason: status === 'rejected' ? rejectionReason : undefined,
+      points: status === 'verified' ? (usersList.find(u => u.uid === target.userId)?.points || 0) + 100 : undefined
+    });
+
+    // Notify user
+    const notifMessage = status === 'verified'
+      ? 'অভিনন্দন! আপনার স্টুডেন্ট আইডি সফলভাবে ভেরিফাইড হয়েছে এবং প্রোফাইলে ব্লু-টিক ব্যাজ যুক্ত করা হয়েছে।'
+      : `আপনার স্টুডেন্ট আইডি ভেরিফিকেশন প্রত্যাখ্যাত হয়েছে। কারণ: ${rejectionReason || 'তথ্য বা ছবির অস্পষ্টতা'}`;
+
+    const newNotif: NotificationItem = {
+      id: 'notif_' + Date.now(),
+      userId: target.userId,
+      title: status === 'verified' ? 'ব্লু-টিক ভেরিফিকেশন সফল! 🎓' : 'আইডি ভেরিফিকেশন আপডেট',
+      message: notifMessage,
+      type: status === 'verified' ? 'approval' : 'rejection',
+      linkTab: 'profile',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    };
+    const updatedNotifs = [newNotif, ...notifications];
+    setNotifications(updatedNotifs);
+    localStorage.setItem('chz_notifs', JSON.stringify(updatedNotifs));
+    pushSharedServerUpdate('notifications', updatedNotifs);
+
+    logAdminAction(
+      `ID Verification ${status === 'verified' ? 'Approved' : 'Rejected'}`,
+      `শিক্ষার্থী: ${target.userName} (${target.studentIdNumber})`
+    );
+
+    addToast(
+      status === 'verified' ? `${target.userName}-কে ভেরিফাইড ব্লু-টিক ব্যাজ দেওয়া হয়েছে!` : 'ভেরিফিকেশন প্রত্যাখ্যাত হয়েছে।',
+      'success'
+    );
+    return true;
+  };
+
+  // Bookmarks
+  const toggleBookmark = (type: 'material' | 'post' | 'book', id: string) => {
+    const key = type === 'material' ? 'materialIds' : type === 'post' ? 'postIds' : 'bookIds';
+    const list = savedBookmarks[key] || [];
+    const isSaved = list.includes(id);
+    const updatedList = isSaved ? list.filter(item => item !== id) : [...list, id];
+    const updated = {
+      ...savedBookmarks,
+      [key]: updatedList,
+    };
+    setSavedBookmarks(updated);
+    localStorage.setItem('chz_bookmarks', JSON.stringify(updated));
+    pushSharedServerUpdate('bookmarks', updated);
+    addToast(isSaved ? 'বুকমার্ক থেকে সরানো হয়েছে।' : 'সংরক্ষিত তালিকায় যুক্ত হয়েছে!', 'info');
+  };
+
+  const isBookmarked = (type: 'material' | 'post' | 'book', id: string) => {
+    const key = type === 'material' ? 'materialIds' : type === 'post' ? 'postIds' : 'bookIds';
+    return (savedBookmarks[key] || []).includes(id);
+  };
+
+  // Academic Routines
+  const addRoutineSlot = (slot: Omit<ClassRoutineSlot, 'id'>) => {
+    const newSlot: ClassRoutineSlot = {
+      ...slot,
+      id: 'routine_' + Date.now(),
+    };
+    const updated = [...routineSlots, newSlot];
+    setRoutineSlots(updated);
+    localStorage.setItem('chz_routines', JSON.stringify(updated));
+    pushSharedServerUpdate('routines', updated);
+    addToast('ক্লাস রুটিনে নতুন শিডিউল যোগ হয়েছে!', 'success');
+  };
+
+  const deleteRoutineSlot = (id: string) => {
+    const updated = routineSlots.filter(s => s.id !== id);
+    setRoutineSlots(updated);
+    localStorage.setItem('chz_routines', JSON.stringify(updated));
+    pushSharedServerUpdate('routines', updated);
+    addToast('ক্লাস শিডিউল মুছে ফেলা হয়েছে।', 'info');
+  };
+
+  // Exams Tracker
+  const addExam = (exam: Omit<ExamCountdownItem, 'id' | 'createdAt'>) => {
+    const newExam: ExamCountdownItem = {
+      ...exam,
+      id: 'exam_' + Date.now(),
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [newExam, ...exams];
+    setExams(updated);
+    localStorage.setItem('chz_exams', JSON.stringify(updated));
+    pushSharedServerUpdate('exams', updated);
+    addToast('নতুন পরীক্ষার কাউন্টডাউন যোগ হয়েছে!', 'success');
+  };
+
+  const deleteExam = (id: string) => {
+    const updated = exams.filter(e => e.id !== id);
+    setExams(updated);
+    localStorage.setItem('chz_exams', JSON.stringify(updated));
+    pushSharedServerUpdate('exams', updated);
+    addToast('পরীক্ষা মুছে ফেলা হয়েছে।', 'info');
+  };
+
+  const toggleSyllabusTopic = (examId: string, topicId: string) => {
+    const updated = exams.map(e => {
+      if (e.id === examId) {
+        return {
+          ...e,
+          syllabusTopics: e.syllabusTopics.map(t => t.id === topicId ? { ...t, isCompleted: !t.isCompleted } : t)
+        };
+      }
+      return e;
+    });
+    setExams(updated);
+    localStorage.setItem('chz_exams', JSON.stringify(updated));
+    pushSharedServerUpdate('exams', updated);
+  };
+
+  // CGPA Records
+  const saveCGPARecord = (record: Omit<SavedCGPARecord, 'id' | 'updatedAt'>) => {
+    const newRecord: SavedCGPARecord = {
+      ...record,
+      id: 'cgpa_' + Date.now(),
+      updatedAt: new Date().toISOString(),
+    };
+    const updated = [newRecord, ...savedCGPARecords];
+    setSavedCGPARecords(updated);
+    localStorage.setItem('chz_cgpa', JSON.stringify(updated));
+    pushSharedServerUpdate('cgpa', updated);
+    addToast('CGPA হিসাব সফলভাবে সেভ করা হয়েছে!', 'success');
+  };
+
+  const deleteCGPARecord = (id: string) => {
+    const updated = savedCGPARecords.filter(r => r.id !== id);
+    setSavedCGPARecords(updated);
+    localStorage.setItem('chz_cgpa', JSON.stringify(updated));
+    pushSharedServerUpdate('cgpa', updated);
+    addToast('CGPA রেকর্ড মোছা হয়েছে।', 'info');
+  };
+
+  // Chat & Messaging
+  const openDirectChatWithUser = (
+    targetUser: { uid: string; displayName: string; photoURL?: string; collegeName?: string; department?: string; isVerified?: boolean },
+    contextItem?: ChatConversation['contextItem']
+  ) => {
+    if (!currentUser) {
+      addToast('চ্যাট করতে অনুগ্রহ করে লগইন করুন।', 'error');
+      return;
+    }
+    if (currentUser.uid === targetUser.uid) {
+      addToast('নিজের সাথে চ্যাট করা সম্ভব নয়।', 'info');
+      return;
+    }
+
+    let existingConvo = chatConversations.find(c => 
+      c.participantIds.includes(currentUser.uid) && c.participantIds.includes(targetUser.uid)
+    );
+
+    if (!existingConvo) {
+      const newConvoId = `dm_${[currentUser.uid, targetUser.uid].sort().join('_')}`;
+      existingConvo = {
+        id: newConvoId,
+        participantIds: [currentUser.uid, targetUser.uid],
+        participants: [
+          {
+            uid: currentUser.uid,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL,
+            collegeName: currentUser.collegeName,
+            department: currentUser.department,
+            isVerified: currentUser.verificationStatus === 'verified',
+          },
+          targetUser,
+        ],
+        lastMessage: contextItem ? `বই/নোট: ${contextItem.title}` : 'নতুন বার্তা শুরু হয়েছে',
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
+        contextItem,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const updatedConvos = [existingConvo, ...chatConversations];
+      setChatConversations(updatedConvos);
+      localStorage.setItem('chz_chat_convos', JSON.stringify(updatedConvos));
+      pushSharedServerUpdate('chatConversations', updatedConvos);
+    } else if (contextItem && !existingConvo.contextItem) {
+      const updatedConvos = chatConversations.map(c => c.id === existingConvo!.id ? { ...c, contextItem } : c);
+      setChatConversations(updatedConvos);
+      localStorage.setItem('chz_chat_convos', JSON.stringify(updatedConvos));
+      pushSharedServerUpdate('chatConversations', updatedConvos);
+    }
+
+    setActiveChatId(existingConvo.id);
+    setActiveTab('chat');
+  };
+
+  const sendMessage = (conversationId: string, content: string, contextItem?: ChatMessage['contextItem']) => {
+    if (!currentUser || !content.trim()) return;
+
+    const newMsg: ChatMessage = {
+      id: 'msg_' + Date.now(),
+      conversationId,
+      senderId: currentUser.uid,
+      senderName: currentUser.displayName,
+      senderAvatar: currentUser.photoURL,
+      senderCollege: currentUser.collegeName,
+      senderIsVerified: currentUser.verificationStatus === 'verified',
+      content: content.trim(),
+      contextItem,
+      createdAt: new Date().toISOString(),
+    };
+
+    const currentMsgList = chatMessages[conversationId] || [];
+    const updatedMsgList = [...currentMsgList, newMsg];
+    const updatedMessagesMap = {
+      ...chatMessages,
+      [conversationId]: updatedMsgList,
+    };
+
+    setChatMessages(updatedMessagesMap);
+    localStorage.setItem('chz_chat_msgs', JSON.stringify(updatedMessagesMap));
+    pushSharedServerUpdate('chatMessages', updatedMessagesMap);
+
+    // Update conversation last message
+    const updatedConvos = chatConversations.map(c => {
+      if (c.id === conversationId) {
+        return {
+          ...c,
+          lastMessage: content.trim(),
+          lastMessageTime: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return c;
+    });
+    setChatConversations(updatedConvos);
+    localStorage.setItem('chz_chat_convos', JSON.stringify(updatedConvos));
+    pushSharedServerUpdate('chatConversations', updatedConvos);
+  };
+
   const unreadNotifCount = notifications.filter(n => !n.isRead && (n.userId === 'all' || n.userId === currentUser?.uid)).length;
 
   return (
@@ -834,6 +1282,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resolveReport,
         activityLogs,
         logAdminAction,
+        isDarkMode,
+        toggleDarkMode,
+        verificationRequests,
+        submitVerificationRequest,
+        reviewVerificationRequest,
+        savedBookmarks,
+        toggleBookmark,
+        isBookmarked,
+        routineSlots,
+        addRoutineSlot,
+        deleteRoutineSlot,
+        exams,
+        addExam,
+        deleteExam,
+        toggleSyllabusTopic,
+        savedCGPARecords,
+        saveCGPARecord,
+        deleteCGPARecord,
+        chatConversations,
+        chatMessages,
+        campusGroups,
+        activeChatId,
+        setActiveChatId,
+        openDirectChatWithUser,
+        sendMessage,
       }}
     >
       {children}

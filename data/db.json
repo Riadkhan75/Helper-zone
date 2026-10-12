@@ -1,0 +1,816 @@
+{
+  "settings": {
+    "bannerNotice": "সতর্কতা: আসন্ন সেমিস্টার ফাইনাল পরীক্ষার রুটিন প্রকাশিত হয়েছে। স্টাডি জোনে বিগত বছরের প্রশ্নমালা আপডেট করা হয়েছে।",
+    "allowedFileTypes": [
+      ".pdf",
+      ".docx",
+      ".jpg",
+      ".png"
+    ],
+    "siteDescription": "কলেজ ও বিশ্ববিদ্যালয় শিক্ষার্থীদের জন্য নির্ভরযোগ্য কমিউনিটি প্ল্যাটফর্ম",
+    "maxFileUploadMb": 15,
+    "siteName": "Campus Help Zone",
+    "isMaintenanceMode": false,
+    "isNoticeActive": true
+  },
+  "notices": [
+    {
+      "category": "পরীক্ষা সংক্রান্ত",
+      "publishedBy": "অফিস রেজিস্টার",
+      "priority": "emergency",
+      "isActive": true,
+      "createdAt": "2026-10-09T04:00:00Z",
+      "title": "২০২৬ শিক্ষাবর্ষের মিডটার্ম পরীক্ষার সময়সূচি ঘোষণা",
+      "id": "notice_01",
+      "content": "সকল বিভাগের ছাত্র-ছাত্রীদের অবগতির জন্য জানানো যাচ্ছে যে, আগামী ২৫ অক্টোবর থেকে মিডটার্ম পরীক্ষা শুরু হবে। প্রবেশপত্র সংগ্রহের শেষ তারিখ ২০ অক্টোবর।",
+      "date": "১০ অক্টোবর ২০২৬"
+    },
+    {
+      "createdAt": "2026-10-08T06:30:00Z",
+      "isActive": true,
+      "priority": "important",
+      "title": "কেন্দ্রীয় লাইব্রেরিতে নতুন রেফারেন্স বুক সংযোজন",
+      "id": "notice_02",
+      "category": "লাইব্রেরি নোটিশ",
+      "date": "০৮ অক্টোবর ২০২৬",
+      "publishedBy": "লাইব্রেরিয়ান",
+      "content": "বিজ্ঞান ও বাণিজ্য অনুষদের জন্য আন্তর্জাতিক মানের ৫০+ নতুন রেফারেন্স বই লাইব্রেরিতে যুক্ত হয়েছে। শিক্ষার্থী কার্ড প্রদর্শনপূর্বক সংগ্রহ করা যাবে।"
+    },
+    {
+      "publishedBy": "ডিবেটিং সোসাইটি",
+      "isActive": true,
+      "priority": "general",
+      "createdAt": "2026-10-05T10:00:00Z",
+      "category": "ক্লাব ও ইভেন্ট",
+      "title": "বার্ষিক বিতর্ক প্রতিযোগিতা ২০২৬ এর রেজিস্ট্রেশন শুরু",
+      "content": "আন্তঃকলেজ বিতর্ক উৎসবে অংশ নিতে ইচ্ছুক দলগুলোকে আগামী ১২ অক্টোবরের মধ্যে ডিবেটিং ক্লাবের হেল্পডেস্কে নাম জমা দিতে হবে।",
+      "id": "notice_03",
+      "date": "০৫ অক্টোবর ২০২৬"
+    }
+  ],
+  "posts": [
+    {
+      "updatedAt": "2026-10-10T08:00:00Z",
+      "authorName": "সাদিয়া হক",
+      "likes": [
+        "admin_user_01",
+        "student_user_03"
+      ],
+      "title": "জরুরি: ও-নেগেটিভ (O-) রক্তের প্রয়োজন",
+      "isUrgent": true,
+      "authorId": "student_user_02",
+      "category": "help",
+      "authorCollege": "চট্টগ্রাম কলেজ",
+      "content": "আমার এক সহপাঠীর বাবার হার্ট অপারেশনের জন্য আগামীকাল সকাল ৯টায় চট্টগ্রাম মেডিকেল কলেজ হাসপাতালে ১ ব্যাগ O- রক্ত প্রয়োজন। কোনো ভাই বা বোন সাহায্য করতে পারলে অনুগ্রহ করে দ্রুত ইনবক্স করুন।",
+      "createdAt": "2026-10-10T08:00:00Z",
+      "commentCount": 4,
+      "status": "active",
+      "id": "post_01",
+      "authorAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      "poll": {
+        "options": [
+          {
+            "text": "লাইব্রেরি রিডিং রুম (সরাসরি)",
+            "votes": [
+              "admin_user_01",
+              "student_user_02"
+            ],
+            "id": "opt_1"
+          },
+          {
+            "id": "opt_2",
+            "text": "অনলাইন গুগল মিট / ডিসকর্ড",
+            "votes": [
+              "student_user_03"
+            ]
+          }
+        ],
+        "question": "গ্রুপ স্টাডির জন্য কোন মাধ্যমটি আপনাদের বেশি পছন্দ?"
+      },
+      "authorCollege": "রাজশাহী কলেজ",
+      "title": "ক্যালকুলাস ও লিনিয়ার অ্যালজেবরা স্টাডি পার্টনার খুঁজছি",
+      "id": "post_02",
+      "status": "active",
+      "updatedAt": "2026-10-09T14:30:00Z",
+      "authorId": "student_user_03",
+      "likes": [
+        "admin_user_01"
+      ],
+      "category": "study_partner",
+      "authorAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+      "authorName": "তানভীর আহমেদ",
+      "createdAt": "2026-10-09T14:30:00Z",
+      "content": "আসন্ন সেমিস্টারের গণিত কোর্সের প্রস্তুতি নেওয়ার জন্য ২-৩ জন সিরিয়াস স্টাডি পার্টনার প্রয়োজন। প্রতিদিন সন্ধ্যায় লাইব্রেরিতে অথবা গুগল মিটে ১ ঘণ্টা সমস্যা সমাধান করব।",
+      "commentCount": 2
+    },
+    {
+      "content": "সপ্তাহে ৩ দিন পড়াতে হবে। সম্মানী আলোচনা সাপেক্ষ (৬,০০০ - ৭,৫০০ টাকা)। ঢাকা বিশ্ববিদ্যালয় বা বুয়েটের সংশ্লিষ্ট বিভাগের শিক্ষার্থীরা অগ্রাধিকার পাবেন।",
+      "updatedAt": "2026-10-08T11:00:00Z",
+      "id": "post_03",
+      "category": "tuition",
+      "authorId": "admin_user_01",
+      "likes": [
+        "student_user_02"
+      ],
+      "createdAt": "2026-10-08T11:00:00Z",
+      "authorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+      "status": "active",
+      "title": "ধানমন্ডি এলাকায় ৯ম-১০ম শ্রেণির পদার্থ ও গণিত টিউটর প্রয়োজন",
+      "commentCount": 1,
+      "authorCollege": "ঢাকা বিশ্ববিদ্যালয়",
+      "authorName": "নজরুল ইসলাম (এডমিন)"
+    }
+  ],
+  "comments": {
+    "post_02": [
+      {
+        "authorId": "student_user_02",
+        "authorAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+        "id": "comm_02",
+        "postId": "post_02",
+        "content": "আমি যুক্ত হতে চাই। নিয়মিত প্রস্তুতি নেওয়া দরকার।",
+        "createdAt": "2026-10-09T16:00:00Z",
+        "authorName": "সাদিয়া হক"
+      }
+    ],
+    "post_01": [
+      {
+        "authorAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+        "id": "comm_01",
+        "authorName": "নজরুল ইসলাম (এডমিন)",
+        "replies": [
+          {
+            "authorAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+            "authorName": "সাদিয়া হক",
+            "content": "অসংখ্য ধন্যবাদ ভাইয়া!",
+            "createdAt": "2026-10-10T08:25:00Z",
+            "id": "rep_01",
+            "authorId": "student_user_02"
+          }
+        ],
+        "content": "আমাদের রক্তদান ক্লাব গ্রুপে শেয়ার করে দিয়েছি। আশা করি দ্রুত সমাধান হবে।",
+        "authorId": "admin_user_01",
+        "createdAt": "2026-10-10T08:20:00Z",
+        "postId": "post_01"
+      }
+    ]
+  },
+  "studyMaterials": [
+    {
+      "downloadCount": 0,
+      "uploaderId": "admin_user_01",
+      "fileUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "fileSizeMb": 0.01,
+      "id": "study_1791749240932",
+      "updatedAt": "2026-10-11T20:07:20.932Z",
+      "subject": "Vvvvc",
+      "category": "handnote",
+      "description": "",
+      "title": "Dvdhrh",
+      "createdAt": "2026-10-11T20:07:20.932Z",
+      "fileType": "application/pdf",
+      "uploaderName": "নজরুল ইসলাম (এডমিন)",
+      "fileName": "সরকারি কর্মচারীগণের হেলথকার্ড রেজিস্ট্রেশন ফরম.docx",
+      "department": "Ggg",
+      "isApproved": true,
+      "academicYear": "১ম বর্ষ"
+    },
+    {
+      "uploaderId": "student_user_02",
+      "fileSizeMb": 4.8,
+      "title": "পদার্থবিজ্ঞান ২য় পত্র: তড়িৎচৌম্বক আবেশ ও পরিবর্তী প্রবাহ হ্যান্ডনোট",
+      "downloadCount": 142,
+      "updatedAt": "2026-10-05T09:00:00Z",
+      "category": "handnote",
+      "fileUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "fileType": "application/pdf",
+      "uploaderName": "সাদিয়া হক",
+      "academicYear": "এইচএসসি / ১ম বর্ষ",
+      "subject": "পদার্থবিজ্ঞান",
+      "createdAt": "2026-10-05T09:00:00Z",
+      "id": "study_01",
+      "description": "সম্পূর্ণ অধ্যায়ের সকল গাণিতিক সূত্র, সংক্ষিপ্ত ব্যাখ্যা এবং বিগত ৫ বছরের বোর্ড পরীক্ষার সমাধানের পরিচ্ছন্ন হাতে লেখা নোট।",
+      "fileName": "Physics_Ch05_HandNote_Complete.pdf",
+      "department": "বিজ্ঞান অনুষদ",
+      "isApproved": true
+    },
+    {
+      "academicYear": "২য় বর্ষ",
+      "category": "question_bank",
+      "title": "ডাটা স্ট্রাকচার ও অ্যালগরিদম ফাইনাল সাজেশন এবং বিগত প্রশ্ন ব্যাংক",
+      "id": "study_02",
+      "downloadCount": 289,
+      "uploaderName": "নজরুল ইসলাম (এডমিন)",
+      "subject": "কম্পিউটার সায়েন্স",
+      "updatedAt": "2026-10-06T14:15:00Z",
+      "description": "ট্রি, গ্রাফ, ডাইনামিক প্রোগ্রামিং এর জটিল টপিক সহজ ভাষায় ব্যাখ্যা ও বিগত সেমিস্টারের প্রশ্ন সমাধান।",
+      "isApproved": true,
+      "department": "ইঞ্জিনিয়ারিং",
+      "fileUrl": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "fileName": "DSA_Question_Bank_2025_2026.pdf",
+      "fileSizeMb": 7.2,
+      "createdAt": "2026-10-06T14:15:00Z",
+      "uploaderId": "admin_user_01",
+      "fileType": "application/pdf"
+    }
+  ],
+  "books": [
+    {
+      "createdAt": "2026-10-07T12:00:00Z",
+      "sellerCollege": "রাজশাহী কলেজ",
+      "sellerId": "student_user_03",
+      "sellerPhone": "01933445566",
+      "title": "Calculus: Early Transcendentals (8th Edition)",
+      "isApproved": true,
+      "edition": "৮ম সংস্করণ (আন্তর্জাতিক)",
+      "listingType": "sell",
+      "price": 380,
+      "imageUrl": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
+      "condition": "like_new",
+      "sellerName": "তানভীর আহমেদ",
+      "subjectDepartment": "বিজ্ঞান ও ইঞ্জিনিয়ারিং",
+      "updatedAt": "2026-10-07T12:00:00Z",
+      "description": "বইয়ের কোনো পাতায় দাগ নেই, পেপারব্যাক কভার নিখুঁত। ক্যাম্পাসের কেন্দ্রীয় লাইব্রেরির সামনে এসে নিতে পারবেন।",
+      "status": "available",
+      "id": "book_01",
+      "author": "James Stewart"
+    },
+    {
+      "id": "book_02",
+      "listingType": "exchange",
+      "imageUrl": "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&w=400&q=80",
+      "price": 0,
+      "status": "available",
+      "sellerPhone": "01822334455",
+      "sellerName": "সাদিয়া হক",
+      "createdAt": "2026-10-08T15:20:00Z",
+      "author": "ড. শাহজাহান তপন ও অন্যান্য",
+      "sellerId": "student_user_02",
+      "edition": "২০২৪ সংস্করণ",
+      "isApproved": true,
+      "description": "বইটি ভালো অবস্থায় আছে। রসায়ন ২য় পত্র বইয়ের সাথে বিনিময় করতে ইচ্ছুক।",
+      "updatedAt": "2026-10-08T15:20:00Z",
+      "subjectDepartment": "বিজ্ঞান অনুষদ",
+      "sellerCollege": "চট্টগ্রাম কলেজ",
+      "condition": "good",
+      "title": "উচ্চ মাধ্যমিক পদার্থবিজ্ঞান ১ম ও ২য় পত্র (প্রফেসর মো. তোফাজ্জল হোসেন)"
+    },
+    {
+      "author": "E. Balagurusamy",
+      "description": "সি প্রোগ্রামিং শেখার দারুণ বই। কোনো শিক্ষার্থী বিনামূল্যে নিতে চাইলে কার্জন হলে যোগাযোগ করুন।",
+      "imageUrl": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=400&q=80",
+      "subjectDepartment": "সিএসই",
+      "createdAt": "2026-10-09T18:00:00Z",
+      "sellerName": "নজরুল ইসলাম (এডমিন)",
+      "status": "available",
+      "price": 0,
+      "sellerCollege": "ঢাকা বিশ্ববিদ্যালয়",
+      "edition": "৭ম সংস্করণ",
+      "id": "book_03",
+      "condition": "acceptable",
+      "title": "Programming in ANSI C",
+      "updatedAt": "2026-10-09T18:00:00Z",
+      "sellerId": "admin_user_01",
+      "listingType": "free",
+      "isApproved": true,
+      "sellerPhone": "01711223344"
+    }
+  ],
+  "lostFoundItems": [
+    {
+      "location": "বিজ্ঞান ভবন, ২য় তলা সিঁড়ির গোড়ায়",
+      "isApproved": true,
+      "type": "found",
+      "updatedAt": "2026-10-10T06:45:00Z",
+      "id": "lf_01",
+      "reporterCollege": "ঢাকা বিশ্ববিদ্যালয়",
+      "status": "active",
+      "hasSensitiveWarning": true,
+      "createdAt": "2026-10-10T06:45:00Z",
+      "reporterId": "admin_user_01",
+      "description": "বিজ্ঞান অনুষদ ভবনের ২য় তলার সিঁড়ির কাছে একটি পরিচয়পত্র পাওয়া গেছে। রোল নম্বর ও নাম ভেরিফাই করে মালিক নিয়ে যান।",
+      "reporterName": "নজরুল ইসলাম (এডমিন)",
+      "reporterPhone": "01711223344",
+      "category": "id_card",
+      "imageUrl": "",
+      "title": "একটি স্টুডেন্ট আইডি কার্ড পাওয়া গেছে",
+      "date": "১০ অক্টোবর ২০২৬"
+    },
+    {
+      "isApproved": true,
+      "type": "lost",
+      "reporterPhone": "01822334455",
+      "hasSensitiveWarning": false,
+      "updatedAt": "2026-10-09T17:10:00Z",
+      "reporterCollege": "চট্টগ্রাম college",
+      "description": "গতকাল দুপুরে কেন্দ্রীয় লাইব্রেরির তিন তলার কর্নার টেবিলে পড়ার সময় ভুলবশত ফেলে এসেছি। পেছনের কভারে রূপালি স্টিকার লাগানো আছে। সন্ধান পেলে কৃতজ্ঞ থাকব।",
+      "location": "কেন্দ্রীয় লাইব্রেরি, ৩য় তলা রিডিং রুম",
+      "title": "Casio fx-991EX সায়েন্টিফিক ক্যালকুলেটর হারিয়েছে",
+      "createdAt": "2026-10-09T17:10:00Z",
+      "reporterId": "student_user_02",
+      "reporterName": "সাদিয়া হক",
+      "date": "০৯ অক্টোবর ২০২৬",
+      "status": "active",
+      "category": "electronics",
+      "imageUrl": "https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?auto=format&fit=crop&w=400&q=80",
+      "id": "lf_02"
+    }
+  ],
+  "notifications": [
+    {
+      "title": "ফাইল অনুমোদন বাতিল",
+      "message": "আপনার আপলোডকৃত \"ম্যানেজমেন্ট প্রিন্সিপালস ও অর্গানাইজেশনাল বিহেভিয়ার স্লাইড কম্পাইলেশন\" ফাইলটি নীতিমালার পরিপন্থী হওয়ায় বাতিল করা হয়েছে। কারণ: কপিরাইট অথবা অস্পষ্ট হ্যান্ডনোট",
+      "linkTab": "study",
+      "userId": "student_user_03",
+      "id": "notif_1791809677338",
+      "isRead": false,
+      "createdAt": "2026-10-12T12:54:37.338Z",
+      "type": "rejection"
+    },
+    {
+      "id": "notif_1791744994839",
+      "message": "আপনার আপলোডকৃত \"ম্যানেজমেন্ট প্রিন্সিপালস ও অর্গানাইজেশনাল বিহেভিয়ার স্লাইড কম্পাইলেশন\" ফাইলটি নীতিমালার পরিপন্থী হওয়ায় বাতিল করা হয়েছে। কারণ: কপিরাইট অথবা অস্পষ্ট হ্যান্ডনোট",
+      "linkTab": "study",
+      "isRead": false,
+      "title": "ফাইল অনুমোদন বাতিল",
+      "type": "rejection",
+      "userId": "student_user_03",
+      "createdAt": "2026-10-11T18:56:34.839Z"
+    },
+    {
+      "title": "আপনার পোস্টে নতুন মন্তব্য",
+      "userId": "student_user_02",
+      "id": "notif_01",
+      "message": "নজরুল ইসলাম (এডমিন) আপনার রক্তের প্রয়োজন পোস্টে একটি মন্তব্য করেছেন।",
+      "linkTab": "community",
+      "isRead": false,
+      "createdAt": "2026-10-10T08:20:00Z",
+      "type": "comment"
+    },
+    {
+      "isRead": true,
+      "title": "স্টাডি মেটেরিয়াল অনুমোদিত",
+      "linkTab": "study",
+      "message": "আপনার \"পদার্থবিজ্ঞান ২য় পত্র হ্যান্ডনোট\" এডমিন কর্তৃক অনুমোদিত হয়েছে এবং পাবলিকলি প্রকাশিত হয়েছে।",
+      "type": "approval",
+      "id": "notif_02",
+      "userId": "student_user_02",
+      "createdAt": "2026-10-05T09:10:00Z"
+    },
+    {
+      "message": "২০২৬ শিক্ষাবর্ষের মিডটার্ম পরীক্ষার সময়সূচি প্রকাশিত হয়েছে। রুটিন দেখুন।",
+      "linkTab": "home",
+      "isRead": false,
+      "userId": "student_user_03",
+      "title": "জরুরি কলেজ নোটিশ",
+      "id": "notif_03",
+      "type": "announcement",
+      "createdAt": "2026-10-09T04:05:00Z"
+    }
+  ],
+  "reports": [
+    {
+      "targetTitle": "নকল গাইড বই বিজ্ঞাপন",
+      "reporterName": "সাদিয়া হক",
+      "reason": "spam",
+      "id": "rep_01",
+      "targetId": "book_99",
+      "reporterId": "student_user_02",
+      "details": "ব্যবহারকারী বাণিজ্যিক প্রচারণার জন্য একই পোস্ট একাধিকবার দিচ্ছেন।",
+      "createdAt": "2026-10-09T19:00:00Z",
+      "status": "resolved",
+      "targetType": "book"
+    }
+  ],
+  "activityLogs": [
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "১২/১০/২০২৬, ৬:৫৪:৩৭ PM",
+      "details": "আইডি: study_03, কারণ: কপিরাইট অথবা অস্পষ্ট হ্যান্ডনোট",
+      "id": "log_1791809677332",
+      "action": "Material Rejected"
+    },
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "action": "Notice Deleted",
+      "details": "নোটিশ মোছা হয়েছে: notice_03",
+      "id": "log_1791745027302",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৭:০৭ AM"
+    },
+    {
+      "action": "Notice Deleted",
+      "details": "নোটিশ মোছা হয়েছে: notice_02",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৭:০৬ AM",
+      "id": "log_1791745026523",
+      "adminEmail": "nazrulpost75@gmail.com"
+    },
+    {
+      "details": "নোটিশ মোছা হয়েছে: notice_01",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "action": "Notice Deleted",
+      "id": "log_1791745025630",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৭:০৫ AM"
+    },
+    {
+      "action": "Lost & Found Deleted",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৭:০২ AM",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "id": "log_1791745022476",
+      "details": "আইটেম রিমুভ: lf_02"
+    },
+    {
+      "timestamp": "১২/১০/২০২৬, ১২:৫৭:০০ AM",
+      "id": "log_1791745020483",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "action": "Lost & Found Deleted",
+      "details": "আইটেম রিমুভ: lf_01"
+    },
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৫৭ AM",
+      "details": "বই রিমুভ করা হয়েছে: book_02",
+      "action": "Book Listing Deleted",
+      "id": "log_1791745017703"
+    },
+    {
+      "action": "Book Listing Deleted",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৫৫ AM",
+      "id": "log_1791745015623",
+      "details": "বই রিমুভ করা হয়েছে: book_03"
+    },
+    {
+      "id": "log_1791745013509",
+      "action": "Book Listing Deleted",
+      "details": "বই রিমুভ করা হয়েছে: book_01",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৫৩ AM"
+    },
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "details": "আইডি: study_02",
+      "id": "log_1791745009614",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৪৯ AM",
+      "action": "Material Deleted"
+    },
+    {
+      "action": "Material Deleted",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৪৬ AM",
+      "id": "log_1791745006950",
+      "details": "আইডি: study_01"
+    },
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "id": "log_1791745003772",
+      "details": "পোস্ট রিমুভ করা হয়েছে: post_03",
+      "action": "Post Deleted",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৪৩ AM"
+    },
+    {
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৪১ AM",
+      "action": "Post Deleted",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "id": "log_1791745001091",
+      "details": "পোস্ট রিমুভ করা হয়েছে: post_02"
+    },
+    {
+      "details": "পোস্ট রিমুভ করা হয়েছে: post_01",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৩৯ AM",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "action": "Post Deleted",
+      "id": "log_1791744999813"
+    },
+    {
+      "action": "Report Handled",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৩৫ AM",
+      "details": "রিপোর্ট আইডি rep_01 স্ট্যাটাস: resolved",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "id": "log_1791744995630"
+    },
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "action": "Material Rejected",
+      "timestamp": "১২/১০/২০২৬, ১২:৫৬:৩৪ AM",
+      "details": "আইডি: study_03, কারণ: কপিরাইট অথবা অস্পষ্ট হ্যান্ডনোট",
+      "id": "log_1791744994832"
+    },
+    {
+      "action": "Study Material Approved",
+      "id": "log_01",
+      "details": "পদার্থবিজ্ঞান ২য় পত্র হ্যান্ডনোট অনুমোদিত করা হয়েছে",
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "2026-10-05 09:10 AM"
+    },
+    {
+      "adminEmail": "nazrulpost75@gmail.com",
+      "timestamp": "2026-10-09 04:00 AM",
+      "id": "log_02",
+      "details": "মিডটার্ম পরীক্ষার সময়সূচি নোটিশ প্রকাশ করা হয়েছে",
+      "action": "Notice Published"
+    }
+  ],
+  "users": [
+    {
+      "updatedAt": "2026-10-10T10:00:00Z",
+      "showPhonePublicly": false,
+      "email": "nazrulpost75@gmail.com",
+      "role": "admin",
+      "collegeName": "ঢাকা বিশ্ববিদ্যালয়",
+      "bio": "ক্যাম্পাস হেল্প জোনের প্রতিষ্ঠাতা ও প্রধান মডারেটর। যেকোনো সহযোগিতায় যোগাযোগ করতে পারেন।",
+      "photoURL": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+      "createdAt": "2026-09-01T10:00:00Z",
+      "uid": "admin_user_01",
+      "phoneNumber": "01711223344",
+      "displayName": "নজরুল ইসলাম (এডমিন)",
+      "department": "কম্পিউটার সায়েন্স অ্যান্ড ইঞ্জিনিয়ারিং",
+      "academicYear": "৪র্থ বর্ষ"
+    },
+    {
+      "department": "পদার্থবিজ্ঞান",
+      "showPhonePublicly": false,
+      "bio": "বিজ্ঞানের শিক্ষার্থী। হ্যান্ডনোট শেয়ার করতে এবং গ্রুপ স্টাডি করতে পছন্দ করি।",
+      "updatedAt": "2026-10-05T08:30:00Z",
+      "collegeName": "চট্টগ্রাম কলেজ",
+      "academicYear": "৩য় বর্ষ",
+      "role": "student",
+      "createdAt": "2026-09-15T12:00:00Z",
+      "email": "sadia.haque@student.ac.bd",
+      "displayName": "সাদিয়া হক",
+      "phoneNumber": "01822334455",
+      "uid": "student_user_02",
+      "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80"
+    },
+    {
+      "role": "student",
+      "email": "tanvir.ahmed@student.ac.bd",
+      "academicYear": "২য় বর্ষ",
+      "createdAt": "2026-09-20T09:15:00Z",
+      "bio": "বইপ্রেমী শিক্ষার্থী। পুরোনো একাডেমিক বই বিনিময় করতে আগ্রহী।",
+      "department": "ব্যবস্থাপনা",
+      "displayName": "তানভীর আহমেদ",
+      "phoneNumber": "01933445566",
+      "photoURL": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+      "uid": "student_user_03",
+      "collegeName": "রাজশাহী কলেজ",
+      "updatedAt": "2026-10-08T14:20:00Z",
+      "showPhonePublicly": true
+    }
+  ],
+  "verifications": [
+    {
+      "id": "verif_01",
+      "userId": "student_user_04",
+      "userName": "ফারহান কবির",
+      "userEmail": "farhan.kabir@student.ac.bd",
+      "userCollege": "ঢাকা কলেজ",
+      "userDepartment": "অর্থনীতি",
+      "academicYear": "১ম বর্ষ",
+      "studentIdNumber": "DC-ECON-2025-045",
+      "idCardImageUrl": "https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80",
+      "status": "pending",
+      "submittedAt": "2026-10-10T15:30:00Z"
+    },
+    {
+      "id": "verif_02",
+      "userId": "student_user_02",
+      "userName": "সাদিয়া হক",
+      "userEmail": "sadia.haque@student.ac.bd",
+      "userCollege": "চট্টগ্রাম কলেজ",
+      "userDepartment": "পদার্থবিজ্ঞান",
+      "academicYear": "৩য় বর্ষ",
+      "studentIdNumber": "CC-PHY-2023-089",
+      "idCardImageUrl": "https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80",
+      "status": "verified",
+      "submittedAt": "2026-10-01T10:00:00Z",
+      "reviewedAt": "2026-10-02T11:00:00Z"
+    }
+  ],
+  "chatConversations": [
+    {
+      "participants": [
+        {
+          "department": "পদার্থবিজ্ঞান",
+          "isVerified": true,
+          "photoURL": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+          "displayName": "সাদিয়া হক",
+          "collegeName": "চট্টগ্রাম কলেজ",
+          "uid": "student_user_02"
+        },
+        {
+          "isVerified": true,
+          "uid": "student_user_03",
+          "collegeName": "রাজশাহী কলেজ",
+          "department": "ব্যবস্থাপনা",
+          "photoURL": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+          "displayName": "তানভীর আহমেদ"
+        }
+      ],
+      "updatedAt": "2026-10-11T20:06:43.194Z",
+      "unreadCount": 0,
+      "lastMessage": "ক্যাম্পাসে কখন এবং কোথায় দেখা করবেন?",
+      "id": "dm_student_user_02_student_user_03",
+      "participantIds": [
+        "student_user_02",
+        "student_user_03"
+      ],
+      "lastMessageTime": "2026-10-11T20:06:43.194Z",
+      "contextItem": {
+        "type": "book",
+        "id": "book_01",
+        "price": 220,
+        "title": "উচ্চমাধ্যমিক পদার্থবিজ্ঞান ১ম পত্র (শাহজাহান তপন)"
+      },
+      "createdAt": "2026-10-10T16:15:00Z"
+    }
+  ],
+  "chatMessages": {
+    "group_cse": [
+      {
+        "senderCollege": "ঢাকা বিশ্ববিদ্যালয়",
+        "createdAt": "2026-10-10T14:00:00Z",
+        "content": "সকল CSE বন্ধুদের স্বাগতম! আগামী সপ্তাহে আমাদের অ্যালগরিদম প্রবলেম সলভিং সেশন শুরু হচ্ছে। কারো কোনো টপিক জানার থাকলে এখানে শেয়ার করতে পারেন।",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+        "conversationId": "group_cse",
+        "senderName": "নজরুল ইসলাম (এডমিন)",
+        "senderIsVerified": true,
+        "senderId": "admin_user_01",
+        "id": "msg_group_01"
+      },
+      {
+        "content": "দারুণ উদ্যোগ ভাইয়া! ডাইনামিক প্রোগ্রামিং (DP) এবং গ্রাফ অ্যালগরিদম নিয়ে আলোচনা রাখলে খুব ভালো হয়।",
+        "senderName": "সাদিয়া হক",
+        "senderIsVerified": true,
+        "senderId": "student_user_02",
+        "id": "msg_group_02",
+        "conversationId": "group_cse",
+        "senderAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+        "createdAt": "2026-10-10T14:10:00Z",
+        "senderCollege": "চট্টগ্রাম কলেজ"
+      }
+    ],
+    "dm_student_user_02_student_user_03": [
+      {
+        "senderId": "student_user_02",
+        "senderName": "সাদিয়া হক",
+        "senderIsVerified": true,
+        "createdAt": "2026-10-10T16:15:00Z",
+        "conversationId": "dm_student_user_02_student_user_03",
+        "senderCollege": "চট্টগ্রাম কলেজ",
+        "contextItem": {
+          "title": "উচ্চমাধ্যমিক পদার্থবিজ্ঞান ১ম পত্র (শাহজাহান তপন)",
+          "price": 220,
+          "type": "book",
+          "id": "book_01"
+        },
+        "content": "আসসালামু আলাইকুম তানভীর ভাই! আপনার পদার্থবিজ্ঞান বইয়ের বিজ্ঞাপনটি দেখলাম। বইটি কি এখনও এভেইলেবল আছে?",
+        "senderAvatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+        "id": "msg_01"
+      },
+      {
+        "senderName": "তানভীর আহমেদ",
+        "senderCollege": "রাজশাহী কলেজ",
+        "conversationId": "dm_student_user_02_student_user_03",
+        "senderId": "student_user_03",
+        "senderAvatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+        "createdAt": "2026-10-10T16:20:00Z",
+        "id": "msg_02",
+        "content": "ওয়ালাইকুম আসসালাম সাদিয়া আপু! হ্যাঁ, বইটি একদম ফ্রেশ কন্ডিশনে আছে। আপনি চাইলে আগামীকাল ক্যাম্পাসের লাইব্রেরির সামনে এসে নিতে পারেন।",
+        "senderIsVerified": true
+      },
+      {
+        "createdAt": "2026-10-11T20:06:43.191Z",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+        "conversationId": "dm_student_user_02_student_user_03",
+        "contextItem": {
+          "price": 220,
+          "title": "উচ্চমাধ্যমিক পদার্থবিজ্ঞান ১ম পত্র (শাহজাহান তপন)",
+          "id": "book_01",
+          "type": "book"
+        },
+        "senderName": "নজরুল ইসলাম (এডমিন)",
+        "content": "ক্যাম্পাসে কখন এবং কোথায় দেখা করবেন?",
+        "senderId": "admin_user_01",
+        "senderIsVerified": false,
+        "senderCollege": "ঢাকা বিশ্ববিদ্যালয়",
+        "id": "msg_1791749203191"
+      }
+    ]
+  },
+  "routines": [
+    {
+      "teacherName": "প্রফেসর মোস্তাফিজুর রহমান",
+      "day": "Sunday",
+      "id": "routine_03",
+      "subject": "ডাটাবেস ম্যানেজমেন্ট সিস্টেম (DBMS)",
+      "roomNumber": "রুম ৩০৫",
+      "startTime": "10:00 AM",
+      "endTime": "11:30 AM",
+      "type": "theory"
+    },
+    {
+      "day": "Monday",
+      "roomNumber": "রুম ৫০১",
+      "teacherName": "মো. রফিকুল ইসলাম",
+      "endTime": "01:00 PM",
+      "type": "theory",
+      "subject": "ডিসক্রিট ম্যাথমেটিক্স",
+      "id": "routine_04",
+      "startTime": "11:30 AM"
+    },
+    {
+      "startTime": "09:30 AM",
+      "day": "Tuesday",
+      "id": "routine_05",
+      "teacherName": "নাজমিন নাহার",
+      "roomNumber": "রুম ৪০৩",
+      "endTime": "11:00 AM",
+      "type": "theory",
+      "subject": "সফটওয়্যার ইঞ্জিনিয়ারিং"
+    }
+  ],
+  "exams": [
+    {
+      "roomNumber": "পরীক্ষা হল - ৩",
+      "examTitle": "মিডটার্ম সেমিস্টার ফাইনাল ২০২৬",
+      "examDate": "2026-10-17T12:57",
+      "subject": "ডাটা স্ট্রাকচার ও অ্যালগরিদম",
+      "syllabusTopics": [
+        {
+          "title": "Time & Space Complexity (Big-O)",
+          "isCompleted": true,
+          "id": "top_01"
+        },
+        {
+          "isCompleted": true,
+          "id": "top_02",
+          "title": "Linked List, Stack & Queue Implementation"
+        },
+        {
+          "title": "Binary Search Trees & Traversal",
+          "id": "top_03",
+          "isCompleted": false
+        },
+        {
+          "id": "top_04",
+          "title": "Graph Traversal (BFS / DFS)",
+          "isCompleted": false
+        },
+        {
+          "title": "Sorting Algorithms (QuickSort & MergeSort)",
+          "id": "top_05",
+          "isCompleted": false
+        }
+      ],
+      "id": "exam_01",
+      "createdAt": "2026-10-09T10:00:00Z",
+      "notes": "ক্যালকুলেটর অনুমোদনযোগ্য। আইডি কার্ড সাথে রাখতে হবে।"
+    },
+    {
+      "notes": "এসকিউএল কোয়েরি প্র্যাকটিস নিশ্চিত করতে হবে।",
+      "createdAt": "2026-10-10T12:00:00Z",
+      "subject": "ডাটাবেস ম্যানেজমেন্ট সিস্টেম (DBMS)",
+      "examTitle": "সেমিস্টার প্র্যাকটিক্যাল ও থিওরি কুইজ",
+      "syllabusTopics": [
+        {
+          "isCompleted": true,
+          "id": "top_11",
+          "title": "ER Diagram & Relational Mapping"
+        },
+        {
+          "isCompleted": true,
+          "title": "SQL Joins & Subqueries",
+          "id": "top_12"
+        },
+        {
+          "isCompleted": false,
+          "id": "top_13",
+          "title": "Normalization (1NF, 2NF, 3NF, BCNF)"
+        },
+        {
+          "isCompleted": false,
+          "id": "top_14",
+          "title": "Transactions & ACID Properties"
+        }
+      ],
+      "id": "exam_02",
+      "roomNumber": "ল্যাব ২ ও রুম ৩০১",
+      "examDate": "2026-10-24T12:57"
+    }
+  ],
+  "bookmarks": {
+    "materialIds": [
+      "mat_01"
+    ],
+    "postIds": [
+      "post_01"
+    ],
+    "bookIds": [
+      "book_01"
+    ]
+  },
+  "cgpa": [],
+  "updatedAt": "2026-10-12T12:57:34.095Z"
+}

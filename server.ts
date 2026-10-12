@@ -14,10 +14,16 @@ import {
   INITIAL_SETTINGS, 
   INITIAL_LOGS, 
   INITIAL_USERS,
-  INITIAL_COMMENTS
+  INITIAL_COMMENTS,
+  INITIAL_VERIFICATION_REQUESTS,
+  INITIAL_CHAT_CONVERSATIONS,
+  INITIAL_CHAT_MESSAGES,
+  INITIAL_CLASS_ROUTINE,
+  INITIAL_EXAMS,
+  INITIAL_BOOKMARKS
 } from './src/services/seedData.ts';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot } from 'firebase/firestore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,7 +49,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 // Cross-Origin Resource Sharing (CORS) for cross-deployment synchronization
 app.use((req, res, next) => {
@@ -81,6 +87,20 @@ const initialDb = {
   reports: INITIAL_REPORTS,
   activityLogs: INITIAL_LOGS,
   users: INITIAL_USERS,
+  verifications: INITIAL_VERIFICATION_REQUESTS,
+  chatConversations: INITIAL_CHAT_CONVERSATIONS,
+  chatMessages: (() => {
+    const map: Record<string, any[]> = {};
+    INITIAL_CHAT_MESSAGES.forEach(m => {
+      if (!map[m.conversationId]) map[m.conversationId] = [];
+      map[m.conversationId].push(m);
+    });
+    return map;
+  })(),
+  routines: INITIAL_CLASS_ROUTINE,
+  exams: INITIAL_EXAMS,
+  bookmarks: INITIAL_BOOKMARKS,
+  cgpa: [],
   updatedAt: new Date().toISOString(),
 };
 
@@ -93,6 +113,27 @@ const saveDb = () => {
     fs.writeFileSync(DB_FILE, JSON.stringify(currentDb, null, 2), 'utf-8');
   } catch (err) {
     console.error('Failed to save db.json:', err);
+  }
+};
+
+// SSE Connected Clients Pool for Instant Realtime Broadcast across tabs and devices
+const sseClients = new Set<express.Response>();
+
+const broadcastSSE = (type: string, payload: any) => {
+  const message = JSON.stringify({
+    type,
+    payload,
+    timestamp: currentDb.updatedAt,
+  });
+  for (const client of sseClients) {
+    try {
+      client.write(`data: ${message}\n\n`);
+      if (typeof (client as any).flush === 'function') {
+        (client as any).flush();
+      }
+    } catch {
+      sseClients.delete(client);
+    }
   }
 };
 
@@ -111,6 +152,13 @@ if (fs.existsSync(DB_FILE)) {
       lostFoundItems: (Array.isArray(parsed.lostFoundItems) && parsed.lostFoundItems.length > 0) ? parsed.lostFoundItems : initialDb.lostFoundItems,
       users: (Array.isArray(parsed.users) && parsed.users.length > 0) ? parsed.users : initialDb.users,
       settings: parsed.settings || initialDb.settings,
+      verifications: Array.isArray(parsed.verifications) ? parsed.verifications : initialDb.verifications,
+      chatConversations: Array.isArray(parsed.chatConversations) ? parsed.chatConversations : initialDb.chatConversations,
+      chatMessages: parsed.chatMessages || initialDb.chatMessages,
+      routines: Array.isArray(parsed.routines) ? parsed.routines : initialDb.routines,
+      exams: Array.isArray(parsed.exams) ? parsed.exams : initialDb.exams,
+      bookmarks: parsed.bookmarks || initialDb.bookmarks,
+      cgpa: Array.isArray(parsed.cgpa) ? parsed.cgpa : initialDb.cgpa,
     };
     saveDb();
     console.log('Database loaded and validated from persistent storage.');
@@ -124,6 +172,105 @@ if (fs.existsSync(DB_FILE)) {
     console.warn('Could not write initial db.json:', err);
   }
 }
+
+// Bi-directional Real-Time Firestore Synchronization Bridge
+if (serverDb) {
+  try {
+    // 1. Initial hydration from Firestore cloud
+    getDocs(collection(serverDb, 'campus_sync')).then((snap) => {
+      let hydratedCount = 0;
+      snap.forEach((d) => {
+        const data = d.data();
+        if (data && data.payload !== undefined) {
+          (currentDb as any)[d.id] = data.payload;
+          hydratedCount++;
+        }
+      });
+      if (hydratedCount > 0) {
+        currentDb.updatedAt = new Date().toISOString();
+        saveDb();
+        console.log(`server.ts successfully hydrated ${hydratedCount} collections from Firestore cloud.`);
+      }
+    }).catch((hErr) => {
+      console.warn('server.ts Firestore hydration note:', hErr?.message || hErr);
+    });
+
+    // 2. Real-time Live Listener: Any write to Firestore anywhere instantly updates this server & broadcasts to connected browsers
+    onSnapshot(collection(serverDb, 'campus_sync'), (snapshot) => {
+      let changed = false;
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') return;
+        const id = change.doc.id;
+        const data = change.doc.data();
+        if (data && data.payload !== undefined) {
+          const currentVal = (currentDb as any)[id];
+          if (JSON.stringify(currentVal) !== JSON.stringify(data.payload)) {
+            (currentDb as any)[id] = data.payload;
+            changed = true;
+            broadcastSSE(id, data.payload);
+          }
+        }
+      });
+      if (changed) {
+        currentDb.updatedAt = new Date().toISOString();
+        saveDb();
+      }
+    }, (snapErr) => {
+      console.warn('server.ts Firestore onSnapshot listener note:', snapErr?.message || snapErr);
+    });
+  } catch (bridgeErr) {
+    console.warn('server.ts Firestore bridge initialization error:', bridgeErr);
+  }
+}
+
+// API: Server-Sent Events (SSE) Stream for Instant Realtime Synchronization
+app.get('/api/sync/events', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+    'X-Accel-Buffering': 'no', // Critical: disables reverse-proxy buffering
+  });
+
+  if (typeof (res as any).flushHeaders === 'function') {
+    (res as any).flushHeaders();
+  }
+  
+  // Initial handshake packet with full current state
+  res.write(`data: ${JSON.stringify({ type: 'init', data: currentDb, timestamp: currentDb.updatedAt })}\n\n`);
+  if (typeof (res as any).flush === 'function') {
+    (res as any).flush();
+  }
+
+  sseClients.add(res);
+
+  // Keep-alive heartbeat ping every 10s to keep connections alive through proxies
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+      if (typeof (res as any).flush === 'function') {
+        (res as any).flush();
+      }
+    } catch {
+      clearInterval(heartbeat);
+      sseClients.delete(res);
+    }
+  }, 10000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
+
+// API: Version Check Endpoint for ultra-fast low-bandwidth polling
+app.get('/api/sync/version', (req, res) => {
+  res.json({
+    success: true,
+    timestamp: currentDb.updatedAt,
+  });
+});
 
 // API: Get Full Current Shared State (Cross-device sync)
 app.get('/api/sync', (req, res) => {
@@ -139,8 +286,15 @@ app.post('/api/sync', (req, res) => {
   const { type, payload } = req.body;
 
   if (type && payload !== undefined) {
-    (currentDb as any)[type] = payload;
-    saveDb();
+    const existingVal = (currentDb as any)[type];
+    const isDifferent = JSON.stringify(existingVal) !== JSON.stringify(payload);
+
+    if (isDifferent) {
+      (currentDb as any)[type] = payload;
+      saveDb();
+      // Instantly broadcast to all connected web browsers and tabs via SSE
+      broadcastSSE(type, payload);
+    }
 
     // Broadcast mutation to Firestore cloud
     if (serverDb) {
@@ -159,6 +313,11 @@ app.post('/api/sync', (req, res) => {
   if (req.body.data) {
     currentDb = { ...currentDb, ...req.body.data };
     saveDb();
+
+    // Broadcast each updated collection via SSE
+    Object.keys(req.body.data).forEach((k) => {
+      broadcastSSE(k, req.body.data[k]);
+    });
 
     if (serverDb && typeof req.body.data === 'object') {
       Object.keys(req.body.data).forEach((k) => {

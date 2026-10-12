@@ -78,48 +78,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  // Load and periodically sync users from server (cross-device & cross-deployment sync)
+  // Load and sync users from server (cross-device & cross-deployment sync)
   useEffect(() => {
     let isMounted = true;
 
+    const applyUsersIfChanged = (newUsers: UserProfile[]) => {
+      if (!isMounted || !Array.isArray(newUsers) || newUsers.length === 0) return;
+      try {
+        const serialized = JSON.stringify(newUsers);
+        const existing = localStorage.getItem(USERS_STORAGE_KEY);
+        if (existing !== serialized) {
+          setUsers(newUsers);
+          localStorage.setItem(USERS_STORAGE_KEY, serialized);
+
+          setCurrentUser(curr => {
+            if (!curr) return null;
+            const matched = newUsers.find((u: UserProfile) => u.uid === curr.uid || u.email.toLowerCase() === curr.email.toLowerCase());
+            return matched || curr;
+          });
+        }
+      } catch {
+        setUsers(newUsers);
+      }
+    };
+
     // 1. Instant realtime sync from Firestore
     const unsubscribeRealtime = subscribeToRealtimeSync((type, payload) => {
-      if (!isMounted || type !== 'users' || !Array.isArray(payload) || payload.length === 0) return;
-
-      setUsers(payload);
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(payload));
-
-      setCurrentUser(curr => {
-        if (!curr) return null;
-        const matched = payload.find((u: UserProfile) => u.uid === curr.uid || u.email.toLowerCase() === curr.email.toLowerCase());
-        return matched || curr;
-      });
+      if (type === 'users' && Array.isArray(payload)) {
+        applyUsersIfChanged(payload);
+      }
     });
 
-    // 2. HTTP sync polling fallback
+    // 2. HTTP sync fetch on boot and window focus
     const syncUsersFromServer = async () => {
       const serverState = await fetchSharedServerState();
       if (!isMounted || !serverState) return;
 
       if (Array.isArray(serverState.users) && serverState.users.length > 0) {
-        setUsers(serverState.users);
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(serverState.users));
-
-        // If current user is logged in, ensure their latest profile details are synced
-        setCurrentUser(curr => {
-          if (!curr) return null;
-          const matched = serverState.users.find((u: UserProfile) => u.uid === curr.uid || u.email.toLowerCase() === curr.email.toLowerCase());
-          return matched || curr;
-        });
+        applyUsersIfChanged(serverState.users);
       }
     };
 
     syncUsersFromServer();
-    const interval = setInterval(syncUsersFromServer, 5000);
+    window.addEventListener('focus', syncUsersFromServer);
+
     return () => {
       isMounted = false;
       unsubscribeRealtime();
-      clearInterval(interval);
+      window.removeEventListener('focus', syncUsersFromServer);
     };
   }, []);
 

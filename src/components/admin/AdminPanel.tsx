@@ -33,12 +33,16 @@ import {
   Tag,
   Flag,
   Filter,
-  Loader2
+  Loader2,
+  FileCheck2,
+  Maximize2,
+  X
 } from 'lucide-react';
-import { StudyMaterial, CollegeNotice, UserProfile, ReportItem, BookListing, LostFoundItem } from '../../types';
+import { StudyMaterial, CollegeNotice, UserProfile, ReportItem, BookListing, LostFoundItem, VerificationRequest } from '../../types';
 import { ConfirmModal } from '../common/ConfirmModal';
+import { VerifiedBadge } from '../common/VerifiedBadge';
 
-type AdminTab = 'overview' | 'approvals' | 'users' | 'posts' | 'study' | 'books' | 'lostfound' | 'reports' | 'notices' | 'settings' | 'logs';
+type AdminTab = 'overview' | 'verifications' | 'approvals' | 'users' | 'posts' | 'study' | 'books' | 'lostfound' | 'reports' | 'notices' | 'settings' | 'logs';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -70,11 +74,19 @@ export const AdminPanel: React.FC = () => {
     settings, 
     updateSettings, 
     activityLogs,
+    verificationRequests,
+    reviewVerificationRequest,
     setActiveTab,
     addToast
   } = useApp();
 
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('overview');
+
+  // Verification review states
+  const [zoomedIdCardUrl, setZoomedIdCardUrl] = useState<string | null>(null);
+  const [rejectVerifId, setRejectVerifId] = useState<string | null>(null);
+  const [verifRejectReason, setVerifRejectReason] = useState('');
+  const [verifFilter, setVerifFilter] = useState<'all' | 'pending' | 'verified' | 'rejected'>('all');
 
   // Filters for content tabs
   const [bookSearch, setBookSearch] = useState('');
@@ -153,6 +165,7 @@ export const AdminPanel: React.FC = () => {
   // Pending items count
   const pendingStudyMaterials = studyMaterials.filter(m => !m.isApproved);
   const pendingReports = reports.filter(r => r.status === 'pending');
+  const pendingVerifications = verificationRequests.filter(v => v.status === 'pending');
 
   // Filtered Users
   const filteredUsers = usersList.filter(u => 
@@ -231,6 +244,7 @@ export const AdminPanel: React.FC = () => {
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {[
           { id: 'overview' as const, label: 'ড্যাশবোর্ড', count: undefined },
+          { id: 'verifications' as const, label: 'আইডি ভেরিফিকেশন', count: pendingVerifications.length },
           { id: 'approvals' as const, label: 'অপেক্ষমাণ অনুমোদন', count: pendingStudyMaterials.length },
           { id: 'users' as const, label: 'ব্যবহারকারী', count: usersList.length },
           { id: 'posts' as const, label: 'কমিউনিটি পোস্ট', count: posts.length },

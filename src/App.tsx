@@ -17,6 +17,9 @@ import { CommunityView } from './components/community/CommunityView';
 import { NotificationsView } from './components/notifications/NotificationsView';
 import { ProfileView } from './components/profile/ProfileView';
 import { AdminPanel } from './components/admin/AdminPanel';
+import { AcademicToolsView } from './components/academic/AcademicToolsView';
+import { LeaderboardView } from './components/leaderboard/LeaderboardView';
+import { ChatView } from './components/chat/ChatView';
 import { AuthModal } from './components/auth/AuthModal';
 import { ProfileEditModal } from './components/auth/ProfileEditModal';
 import { UploadMaterialModal } from './components/study/UploadMaterialModal';
@@ -83,7 +86,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
       {/* Top Header */}
       <Header onOpenAuth={() => setAuthModalOpen(true)} />
 
@@ -129,6 +132,12 @@ const MainLayout: React.FC = () => {
           />
         )}
 
+        {activeTab === 'academic' && <AcademicToolsView />}
+
+        {activeTab === 'leaderboard' && <LeaderboardView />}
+
+        {activeTab === 'chat' && <ChatView />}
+
         {activeTab === 'notifications' && <NotificationsView />}
 
         {activeTab === 'profile' && (
@@ -142,23 +151,26 @@ const MainLayout: React.FC = () => {
       </main>
 
       {/* Quiet Domain Footer (Desktop) */}
-      <footer className="hidden md:block bg-white border-t border-slate-200/80 py-8 text-xs text-slate-500 mt-auto">
+      <footer className="hidden md:block bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 py-8 text-xs text-slate-500 dark:text-slate-400 mt-auto">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-indigo-600" />
-            <span className="font-semibold text-slate-800">{settings.siteName}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{settings.siteName}</span>
             <span>—</span>
             <span>কলেজ ও বিশ্ববিদ্যালয় শিক্ষার্থীদের নির্ভরযোগ্য সহযোগী</span>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-600">
+          <div className="flex items-center gap-4 text-slate-600 dark:text-slate-400 flex-wrap">
             <button onClick={() => setActiveTab('home')} className="hover:text-indigo-600 cursor-pointer">হোম</button>
             <button onClick={() => setActiveTab('study')} className="hover:text-indigo-600 cursor-pointer">স্টাডি জোন</button>
             <button onClick={() => setActiveTab('books')} className="hover:text-indigo-600 cursor-pointer">বই বিনিময়</button>
+            <button onClick={() => setActiveTab('academic')} className="hover:text-indigo-600 cursor-pointer">অ্যাকাডেমিক টুলস</button>
+            <button onClick={() => setActiveTab('leaderboard')} className="hover:text-indigo-600 cursor-pointer">লিডারবোর্ড</button>
+            <button onClick={() => setActiveTab('chat')} className="hover:text-indigo-600 cursor-pointer">চ্যাট</button>
             <button onClick={() => setActiveTab('lostfound')} className="hover:text-indigo-600 cursor-pointer">লস্ট অ্যান্ড ফাউন্ড</button>
             <button onClick={() => setActiveTab('community')} className="hover:text-indigo-600 cursor-pointer">কমিউনিটি</button>
             {isAdmin && (
-              <button onClick={() => setActiveTab('admin')} className="text-purple-600 font-bold hover:underline cursor-pointer">
+              <button onClick={() => setActiveTab('admin')} className="text-purple-600 dark:text-purple-400 font-bold hover:underline cursor-pointer">
                 এডমিন প্যানেল (/adminriad)
               </button>
             )}

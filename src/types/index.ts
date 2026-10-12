@@ -1,4 +1,5 @@
 export type UserRole = 'student' | 'moderator' | 'admin';
+export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
 
 export interface UserProfile {
   uid: string;
@@ -15,6 +16,16 @@ export interface UserProfile {
   isBanned?: boolean;
   isSuspended?: boolean;
   emailVerified?: boolean;
+  // Student ID Verification
+  verificationStatus?: VerificationStatus;
+  studentIdNumber?: string;
+  idCardImageUrl?: string;
+  verificationSubmittedAt?: string;
+  verificationReviewedAt?: string;
+  verificationRejectionReason?: string;
+  // Points & Contributions (Leaderboard)
+  points?: number;
+  completedTasksCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -150,7 +161,7 @@ export interface NotificationItem {
   title: string;
   message: string;
   type: 'comment' | 'approval' | 'rejection' | 'lost_found' | 'announcement';
-  linkTab?: 'home' | 'study' | 'community' | 'books' | 'lostfound';
+  linkTab?: 'home' | 'study' | 'community' | 'books' | 'lostfound' | 'profile' | 'academic' | 'leaderboard' | 'chat';
   isRead: boolean;
   createdAt: string;
 }
@@ -199,3 +210,139 @@ export interface ActivityLog {
   details: string;
   timestamp: string;
 }
+
+// Student ID Verification Request
+export interface VerificationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userCollege: string;
+  userDepartment: string;
+  academicYear: string;
+  studentIdNumber: string;
+  idCardImageUrl: string;
+  status: VerificationStatus;
+  rejectionReason?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+}
+
+// CGPA & Academic Calculator Types
+export interface CGPACourse {
+  id: string;
+  name: string;
+  credit: number;
+  gradePoint: number;
+  gradeLetter: string;
+}
+
+export interface CGPASemester {
+  id: string;
+  semesterName: string;
+  courses: CGPACourse[];
+}
+
+export interface SavedCGPARecord {
+  id: string;
+  title: string;
+  degreeName: string;
+  totalCredits: number;
+  cgpa: number;
+  semesters: CGPASemester[];
+  updatedAt: string;
+}
+
+// Routine & Exam Countdown Tracker Types
+export type DayOfWeek = 'Saturday' | 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
+
+export interface ClassRoutineSlot {
+  id: string;
+  day: DayOfWeek;
+  subject: string;
+  startTime: string; // e.g. "10:00 AM"
+  endTime: string;   // e.g. "11:30 AM"
+  roomNumber: string;
+  teacherName?: string;
+  type?: 'theory' | 'lab';
+}
+
+export interface SyllabusTopic {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+}
+
+export interface ExamCountdownItem {
+  id: string;
+  subject: string;
+  examTitle: string;
+  examDate: string; // YYYY-MM-DDTHH:mm
+  roomNumber?: string;
+  syllabusTopics: SyllabusTopic[];
+  notes?: string;
+  createdAt: string;
+}
+
+// Bookmarks & Saved Items
+export interface SavedBookmarks {
+  materialIds: string[];
+  postIds: string[];
+  bookIds: string[];
+}
+
+// Direct 1-on-1 & Campus Group Chat Types
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  senderCollege?: string;
+  senderIsVerified?: boolean;
+  content: string;
+  contextItem?: {
+    type: 'book' | 'study';
+    id: string;
+    title: string;
+    price?: number;
+    imageUrl?: string;
+  };
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  participantIds: string[];
+  participants: {
+    uid: string;
+    displayName: string;
+    photoURL?: string;
+    collegeName?: string;
+    department?: string;
+    isVerified?: boolean;
+  }[];
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+  contextItem?: {
+    type: 'book' | 'study';
+    id: string;
+    title: string;
+    price?: number;
+    imageUrl?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampusGroupRoom {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  icon: string;
+  departmentTag: string;
+  memberCount: number;
+}
+

@@ -8,7 +8,14 @@ import {
   NotificationItem, 
   ReportItem,
   SiteSettings,
-  ActivityLog
+  ActivityLog,
+  VerificationRequest,
+  CampusGroupRoom,
+  ChatMessage,
+  ChatConversation,
+  ClassRoutineSlot,
+  ExamCountdownItem,
+  SavedBookmarks
 } from '../types';
 
 export const INITIAL_ADMIN_EMAIL = 'nazrulpost75@gmail.com';
@@ -36,6 +43,10 @@ export const INITIAL_USERS: UserProfile[] = [
     phoneNumber: '01711223344',
     showPhonePublicly: false,
     role: 'admin',
+    verificationStatus: 'verified',
+    studentIdNumber: 'DU-CSE-2022-452',
+    points: 1250,
+    completedTasksCount: 32,
     createdAt: '2026-09-01T10:00:00Z',
     updatedAt: '2026-10-10T10:00:00Z',
   },
@@ -51,6 +62,10 @@ export const INITIAL_USERS: UserProfile[] = [
     phoneNumber: '01822334455',
     showPhonePublicly: false,
     role: 'student',
+    verificationStatus: 'verified',
+    studentIdNumber: 'CC-PHY-2023-089',
+    points: 820,
+    completedTasksCount: 22,
     createdAt: '2026-09-15T12:00:00Z',
     updatedAt: '2026-10-05T08:30:00Z',
   },
@@ -66,8 +81,51 @@ export const INITIAL_USERS: UserProfile[] = [
     phoneNumber: '01933445566',
     showPhonePublicly: true,
     role: 'student',
+    verificationStatus: 'verified',
+    studentIdNumber: 'RC-MGMT-2024-112',
+    points: 650,
+    completedTasksCount: 18,
     createdAt: '2026-09-20T09:15:00Z',
     updatedAt: '2026-10-08T14:20:00Z',
+  },
+  {
+    uid: 'student_user_04',
+    email: 'farhan.kabir@student.ac.bd',
+    displayName: 'ফারহান কবির',
+    photoURL: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+    collegeName: 'ঢাকা কলেজ',
+    department: 'অর্থনীতি',
+    academicYear: '১ম বর্ষ',
+    bio: 'নতুন শিক্ষার্থী। অর্থনীতি ও সাধারণ জ্ঞান বিষয়ে পড়াশোনা করছি।',
+    phoneNumber: '01644556677',
+    showPhonePublicly: false,
+    role: 'student',
+    verificationStatus: 'pending',
+    studentIdNumber: 'DC-ECON-2025-045',
+    idCardImageUrl: 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=400&q=80',
+    points: 310,
+    completedTasksCount: 8,
+    createdAt: '2026-10-01T11:00:00Z',
+    updatedAt: '2026-10-10T15:30:00Z',
+  },
+  {
+    uid: 'student_user_05',
+    email: 'sumaiya.akter@student.ac.bd',
+    displayName: 'সুমাইয়া আক্তার',
+    photoURL: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80',
+    collegeName: 'ইডেন মহিলা কলেজ',
+    department: 'উদ্ভিদবিজ্ঞান',
+    academicYear: '৩য় বর্ষ',
+    bio: 'বায়োলজির সেরা হ্যান্ডনোট তৈরিতে আগ্রহী।',
+    phoneNumber: '01511223344',
+    showPhonePublicly: false,
+    role: 'student',
+    verificationStatus: 'verified',
+    studentIdNumber: 'EMC-BOT-2023-301',
+    points: 540,
+    completedTasksCount: 15,
+    createdAt: '2026-09-28T08:00:00Z',
+    updatedAt: '2026-10-09T12:00:00Z',
   }
 ];
 
@@ -422,3 +480,273 @@ export const INITIAL_LOGS: ActivityLog[] = [
     timestamp: '2026-10-09 04:00 AM',
   }
 ];
+
+export const INITIAL_VERIFICATION_REQUESTS: VerificationRequest[] = [
+  {
+    id: 'verif_01',
+    userId: 'student_user_04',
+    userName: 'ফারহান কবির',
+    userEmail: 'farhan.kabir@student.ac.bd',
+    userCollege: 'ঢাকা কলেজ',
+    userDepartment: 'অর্থনীতি',
+    academicYear: '১ম বর্ষ',
+    studentIdNumber: 'DC-ECON-2025-045',
+    idCardImageUrl: 'https://images.unsplash.com/photo-1589330694653-dad6d3240e2b?auto=format&fit=crop&w=600&q=80',
+    status: 'pending',
+    submittedAt: '2026-10-10T15:30:00Z',
+  },
+  {
+    id: 'verif_02',
+    userId: 'student_user_02',
+    userName: 'সাদিয়া হক',
+    userEmail: 'sadia.haque@student.ac.bd',
+    userCollege: 'চট্টগ্রাম কলেজ',
+    userDepartment: 'পদার্থবিজ্ঞান',
+    academicYear: '৩য় বর্ষ',
+    studentIdNumber: 'CC-PHY-2023-089',
+    idCardImageUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=600&q=80',
+    status: 'verified',
+    submittedAt: '2026-10-01T10:00:00Z',
+    reviewedAt: '2026-10-02T11:00:00Z',
+  }
+];
+
+export const INITIAL_CAMPUS_GROUPS: CampusGroupRoom[] = [
+  {
+    id: 'group_cse',
+    name: 'কম্পিউটার সায়েন্স অ্যান্ড ইঞ্জিনিয়ারিং (CSE / IT)',
+    category: 'ইঞ্জিনিয়ারিং ও প্রযুক্তি',
+    description: 'প্রোগ্রামিং, ডাটা স্ট্রাকচার, অ্যালগরিদম, প্রজেক্ট আইডিয়া ও ক্যারিয়ার আলোচনা।',
+    icon: '💻',
+    departmentTag: 'CSE',
+    memberCount: 342,
+  },
+  {
+    id: 'group_bba',
+    name: 'বিজনেস স্টাডিজ ও বিবিএ ফোরাম (BBA & MBA)',
+    category: 'ব্যবসায় শিক্ষা',
+    description: 'ফিন্যান্স, মার্কেটিং, অ্যাকাউন্টিং অ্যাসাইনমেন্ট ও কেস স্টাডি আলোচনা।',
+    icon: '💼',
+    departmentTag: 'BBA',
+    memberCount: 285,
+  },
+  {
+    id: 'group_eee',
+    name: 'ইলেকট্রিক্যাল অ্যান্ড ইলেকট্রনিক্স (EEE / ETE)',
+    category: 'ইঞ্জিনিয়ারিং',
+    description: 'সার্কিট, ইলেকট্রনিক্স ল্যাব রিপোর্ট, পাওয়ার সিস্টেম ও প্রজেক্ট সাপোর্ট।',
+    icon: '⚡',
+    departmentTag: 'EEE',
+    memberCount: 198,
+  },
+  {
+    id: 'group_medical',
+    name: 'মেডিকেল ও ফার্মাসি স্টুডেন্ট লাউঞ্জ',
+    category: 'চিকিৎসা ও জীববিজ্ঞান',
+    description: 'অ্যানাটমি, ফিজিওলজি, ফার্মা স্টাডি মেটেরিয়াল এবং ক্লিনিক্যাল আলোচনা।',
+    icon: '🩺',
+    departmentTag: 'Medical',
+    memberCount: 220,
+  },
+  {
+    id: 'group_hsc',
+    name: 'এইচএসসি ও ভর্তি প্রস্তুতি সহায়তা (HSC & Admission)',
+    category: 'উচ্চ মাধ্যমিক ও এডমিশন',
+    description: 'এইচএসসি বোর্ড ফাইনাল ও বিশ্ববিদ্যালয় ভর্তি পরীক্ষার ট্রিকস এবং সাজেকশন।',
+    icon: '📚',
+    departmentTag: 'HSC',
+    memberCount: 512,
+  },
+  {
+    id: 'group_general',
+    name: 'ক্যাম্পাস ক্যাফে ও সাধারণ আড্ডা',
+    category: 'ওপেন ফোরাম',
+    description: 'সকল ডিপার্টমেন্টের বন্ধুদের সাথে বন্ধুত্বপূর্ণ আড্ডা, মতামত ও শেয়ারিং।',
+    icon: '☕',
+    departmentTag: 'All',
+    memberCount: 680,
+  }
+];
+
+export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
+  {
+    id: 'msg_01',
+    conversationId: 'dm_student_user_02_student_user_03',
+    senderId: 'student_user_02',
+    senderName: 'সাদিয়া হক',
+    senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    senderCollege: 'চট্টগ্রাম কলেজ',
+    senderIsVerified: true,
+    content: 'আসসালামু আলাইকুম তানভীর ভাই! আপনার পদার্থবিজ্ঞান বইয়ের বিজ্ঞাপনটি দেখলাম। বইটি কি এখনও এভেইলেবল আছে?',
+    contextItem: {
+      type: 'book',
+      id: 'book_01',
+      title: 'উচ্চমাধ্যমিক পদার্থবিজ্ঞান ১ম পত্র (শাহজাহান তপন)',
+      price: 220,
+    },
+    createdAt: '2026-10-10T16:15:00Z',
+  },
+  {
+    id: 'msg_02',
+    conversationId: 'dm_student_user_02_student_user_03',
+    senderId: 'student_user_03',
+    senderName: 'তানভীর আহমেদ',
+    senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+    senderCollege: 'রাজশাহী কলেজ',
+    senderIsVerified: true,
+    content: 'ওয়ালাইকুম আসসালাম সাদিয়া আপু! হ্যাঁ, বইটি একদম ফ্রেশ কন্ডিশনে আছে। আপনি চাইলে আগামীকাল ক্যাম্পাসের লাইব্রেরির সামনে এসে নিতে পারেন।',
+    createdAt: '2026-10-10T16:20:00Z',
+  },
+  {
+    id: 'msg_group_01',
+    conversationId: 'group_cse',
+    senderId: 'admin_user_01',
+    senderName: 'নজরুল ইসলাম (এডমিন)',
+    senderAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
+    senderCollege: 'ঢাকা বিশ্ববিদ্যালয়',
+    senderIsVerified: true,
+    content: 'সকল CSE বন্ধুদের স্বাগতম! আগামী সপ্তাহে আমাদের অ্যালগরিদম প্রবলেম সলভিং সেশন শুরু হচ্ছে। কারো কোনো টপিক জানার থাকলে এখানে শেয়ার করতে পারেন।',
+    createdAt: '2026-10-10T14:00:00Z',
+  },
+  {
+    id: 'msg_group_02',
+    conversationId: 'group_cse',
+    senderId: 'student_user_02',
+    senderName: 'সাদিয়া হক',
+    senderAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+    senderCollege: 'চট্টগ্রাম কলেজ',
+    senderIsVerified: true,
+    content: 'দারুণ উদ্যোগ ভাইয়া! ডাইনামিক প্রোগ্রামিং (DP) এবং গ্রাফ অ্যালগরিদম নিয়ে আলোচনা রাখলে খুব ভালো হয়।',
+    createdAt: '2026-10-10T14:10:00Z',
+  }
+];
+
+export const INITIAL_CHAT_CONVERSATIONS: ChatConversation[] = [
+  {
+    id: 'dm_student_user_02_student_user_03',
+    participantIds: ['student_user_02', 'student_user_03'],
+    participants: [
+      {
+        uid: 'student_user_02',
+        displayName: 'সাদিয়া হক',
+        photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+        collegeName: 'চট্টগ্রাম কলেজ',
+        department: 'পদার্থবিজ্ঞান',
+        isVerified: true,
+      },
+      {
+        uid: 'student_user_03',
+        displayName: 'তানভীর আহমেদ',
+        photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+        collegeName: 'রাজশাহী কলেজ',
+        department: 'ব্যবস্থাপনা',
+        isVerified: true,
+      }
+    ],
+    lastMessage: 'হ্যাঁ, বইটি একদম ফ্রেশ কন্ডিশনে আছে। আগামীকাল ক্যাম্পাসের লাইব্রেরির সামনে এসে নিতে পারেন।',
+    lastMessageTime: '2026-10-10T16:20:00Z',
+    unreadCount: 0,
+    contextItem: {
+      type: 'book',
+      id: 'book_01',
+      title: 'উচ্চমাধ্যমিক পদার্থবিজ্ঞান ১ম পত্র (শাহজাহান তপন)',
+      price: 220,
+    },
+    createdAt: '2026-10-10T16:15:00Z',
+    updatedAt: '2026-10-10T16:20:00Z',
+  }
+];
+
+export const INITIAL_CLASS_ROUTINE: ClassRoutineSlot[] = [
+  {
+    id: 'routine_01',
+    day: 'Saturday',
+    subject: 'ডাটা স্ট্রাকচার অ্যান্ড অ্যালগরিদম',
+    startTime: '09:00 AM',
+    endTime: '10:30 AM',
+    roomNumber: 'রুম ৪০২ (সায়েন্স বিল্ডিং)',
+    teacherName: 'ড. মাহবুবুল হক',
+    type: 'theory',
+  },
+  {
+    id: 'routine_02',
+    day: 'Saturday',
+    subject: 'অ্যালগরিদম ল্যাব (C++)',
+    startTime: '10:45 AM',
+    endTime: '01:00 PM',
+    roomNumber: 'কম্পিউটার ল্যাব-২',
+    teacherName: 'তানজিলা রহমান',
+    type: 'lab',
+  },
+  {
+    id: 'routine_03',
+    day: 'Sunday',
+    subject: 'ডাটাবেস ম্যানেজমেন্ট সিস্টেম (DBMS)',
+    startTime: '10:00 AM',
+    endTime: '11:30 AM',
+    roomNumber: 'রুম ৩০৫',
+    teacherName: 'প্রফেসর মোস্তাফিজুর রহমান',
+    type: 'theory',
+  },
+  {
+    id: 'routine_04',
+    day: 'Monday',
+    subject: 'ডিসক্রিট ম্যাথমেটিক্স',
+    startTime: '11:30 AM',
+    endTime: '01:00 PM',
+    roomNumber: 'রুম ৫০১',
+    teacherName: 'মো. রফিকুল ইসলাম',
+    type: 'theory',
+  },
+  {
+    id: 'routine_05',
+    day: 'Tuesday',
+    subject: 'সফটওয়্যার ইঞ্জিনিয়ারিং',
+    startTime: '09:30 AM',
+    endTime: '11:00 AM',
+    roomNumber: 'রুম ৪০৩',
+    teacherName: 'নাজমিন নাহার',
+    type: 'theory',
+  }
+];
+
+export const INITIAL_EXAMS: ExamCountdownItem[] = [
+  {
+    id: 'exam_01',
+    subject: 'ডাটা স্ট্রাকচার ও অ্যালগরিদম',
+    examTitle: 'মিডটার্ম সেমিস্টার ফাইনাল ২০২৬',
+    examDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // 5 days from now
+    roomNumber: 'পরীক্ষা হল - ৩',
+    syllabusTopics: [
+      { id: 'top_01', title: 'Time & Space Complexity (Big-O)', isCompleted: true },
+      { id: 'top_02', title: 'Linked List, Stack & Queue Implementation', isCompleted: true },
+      { id: 'top_03', title: 'Binary Search Trees & Traversal', isCompleted: false },
+      { id: 'top_04', title: 'Graph Traversal (BFS / DFS)', isCompleted: false },
+      { id: 'top_05', title: 'Sorting Algorithms (QuickSort & MergeSort)', isCompleted: false },
+    ],
+    notes: 'ক্যালকুলেটর অনুমোদনযোগ্য। আইডি কার্ড সাথে রাখতে হবে।',
+    createdAt: '2026-10-09T10:00:00Z',
+  },
+  {
+    id: 'exam_02',
+    subject: 'ডাটাবেস ম্যানেজমেন্ট সিস্টেম (DBMS)',
+    examTitle: 'সেমিস্টার প্র্যাকটিক্যাল ও থিওরি কুইজ',
+    examDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // 12 days from now
+    roomNumber: 'ল্যাব ২ ও রুম ৩০১',
+    syllabusTopics: [
+      { id: 'top_11', title: 'ER Diagram & Relational Mapping', isCompleted: true },
+      { id: 'top_12', title: 'SQL Joins & Subqueries', isCompleted: true },
+      { id: 'top_13', title: 'Normalization (1NF, 2NF, 3NF, BCNF)', isCompleted: false },
+      { id: 'top_14', title: 'Transactions & ACID Properties', isCompleted: false },
+    ],
+    notes: 'এসকিউএল কোয়েরি প্র্যাকটিস নিশ্চিত করতে হবে।',
+    createdAt: '2026-10-10T12:00:00Z',
+  }
+];
+
+export const INITIAL_BOOKMARKS: SavedBookmarks = {
+  materialIds: ['mat_01'],
+  postIds: ['post_01'],
+  bookIds: ['book_01'],
+};
+
